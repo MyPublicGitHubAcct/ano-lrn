@@ -14,8 +14,9 @@ wheels/
 
 # C++
 
-# Claude
+# Tools
 .claude
+.vscode
 
 # Other
 .DS_Store
