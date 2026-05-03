@@ -16,7 +16,7 @@ the test-signal generators and filters work together.
 import matplotlib.pyplot as plt
 import numpy as np
 
-from python.filters import bandpass, highpass, lowpass
+from python.filters import allpass, bandpass, highpass, highshelf, lowpass, lowshelf, notch
 from python.generators import generate_impulse
 
 FS = 44100
@@ -115,5 +115,83 @@ for (title, fn, kwargs), ax, color in zip(IMPULSE_SPECS, axes[1], COLORS):
     ax.axhline(0, color="gray", linewidth=0.5, linestyle="--", alpha=0.6)
 
 fig.suptitle("Biquad Filter Responses", fontsize=13, fontweight="bold")
+plt.tight_layout()
+
+# ── Figure 2: extended filter set ─────────────────────────────────────────────
+
+COLORS4 = ["steelblue", "darkorange", "mediumseagreen", "mediumpurple"]
+NOTCH_QS = [0.5, 1.0, 4.0]
+AP_QS = [0.5, 0.707, 2.0]
+SHELF_GAINS = [-6.0, 0.0, 6.0]
+SHELF_COLORS = ["steelblue", "gray", "darkorange"]
+
+fig2, axes2 = plt.subplots(2, 4, figsize=(18, 8))
+
+imp = _impulse()
+
+# Notch: vary Q
+ax = axes2[0, 0]
+for Q, color in zip(NOTCH_QS, COLORS):
+    h = notch(imp, cutoff=1000.0, fs=FS, Q=Q)
+    freqs, db = _freq_response(h)
+    _plot_freq(ax, freqs, db, label=f"Q = {Q}", color=color, cutoff=1000.0)
+ax.set_title("Notch (cutoff = 1000 Hz)", fontweight="bold")
+ax.set_ylim(-70, 5)
+
+# All-pass: vary Q — magnitude is flat at 0 dB for all Q values
+ax = axes2[0, 1]
+for Q, color in zip(AP_QS, COLORS):
+    h = allpass(imp, cutoff=1000.0, fs=FS, Q=Q)
+    freqs, db = _freq_response(h)
+    _plot_freq(ax, freqs, db, label=f"Q = {Q}", color=color, cutoff=1000.0)
+ax.set_title("All-pass (cutoff = 1000 Hz)\n|H| = 0 dB at all frequencies", fontweight="bold")
+ax.set_ylim(-2, 2)
+
+# Low-shelf: vary gain_db
+ax = axes2[0, 2]
+for gain, color in zip(SHELF_GAINS, SHELF_COLORS):
+    h = lowshelf(imp, cutoff=1000.0, fs=FS, gain_db=gain)
+    freqs, db = _freq_response(h)
+    _plot_freq(ax, freqs, db, label=f"{gain:+.0f} dB", color=color, cutoff=1000.0)
+ax.set_title("Low-shelf (cutoff = 1000 Hz)", fontweight="bold")
+ax.set_ylim(-15, 10)
+
+# High-shelf: vary gain_db
+ax = axes2[0, 3]
+for gain, color in zip(SHELF_GAINS, SHELF_COLORS):
+    h = highshelf(imp, cutoff=1000.0, fs=FS, gain_db=gain)
+    freqs, db = _freq_response(h)
+    _plot_freq(ax, freqs, db, label=f"{gain:+.0f} dB", color=color, cutoff=1000.0)
+ax.set_title("High-shelf (cutoff = 1000 Hz)", fontweight="bold")
+ax.set_ylim(-15, 10)
+
+for ax in axes2[0]:
+    ax.set_xlabel("Frequency (Hz)", fontsize=8)
+    ax.set_ylabel("Magnitude (dB)", fontsize=8)
+    ax.tick_params(labelsize=7)
+    ax.grid(True, which="both", linewidth=0.3, alpha=0.5)
+    ax.axhline(0, color="gray", linewidth=0.5, linestyle=":", alpha=0.7)
+    ax.legend(fontsize=7)
+    ax.set_xlim(20, FS / 2)
+
+# Row 1: impulse responses
+IMPULSE_SPECS2 = [
+    ("Notch\ncutoff = 1000 Hz, Q = 4.0",      notch,     dict(cutoff=1000.0, Q=4.0)),
+    ("All-pass\ncutoff = 1000 Hz, Q = 0.707",  allpass,   dict(cutoff=1000.0, Q=0.707)),
+    ("Low-shelf\ncutoff = 1000 Hz, +6 dB",     lowshelf,  dict(cutoff=1000.0, gain_db=6.0)),
+    ("High-shelf\ncutoff = 1000 Hz, +6 dB",    highshelf, dict(cutoff=1000.0, gain_db=6.0)),
+]
+
+for (title, fn, kwargs), ax, color in zip(IMPULSE_SPECS2, axes2[1], COLORS4):
+    h = fn(imp, fs=FS, **kwargs)
+    _plot_impulse_response(ax, h, label=title.split("\n")[0], color=color)
+    ax.set_title(title, fontweight="bold", fontsize=9)
+    ax.set_xlabel("Time (ms)", fontsize=8)
+    ax.set_ylabel("Amplitude", fontsize=8)
+    ax.tick_params(labelsize=7)
+    ax.grid(True, linewidth=0.3, alpha=0.5)
+    ax.axhline(0, color="gray", linewidth=0.5, linestyle="--", alpha=0.6)
+
+fig2.suptitle("Extended Biquad Filter Responses", fontsize=13, fontweight="bold")
 plt.tight_layout()
 plt.show()

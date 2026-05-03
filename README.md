@@ -4,7 +4,7 @@ DSP algorithm development and testing in Python, targeting eventual port to C++ 
 
 ## Project Structure
 
-```
+```text
 src/       # DSP source modules
 tests/     # pytest test files
 examples/  # standalone example scripts
@@ -44,7 +44,7 @@ examples/  # standalone example scripts
 `src/python/generators.py` provides a set of standard audio DSP test signals. All functions return a time axis `t` and one or more signal arrays sampled at `fs` (default 44100 Hz) over `duration` seconds.
 
 | Function | Description |
-|---|---|
+| --- | --- |
 | `generate_sine` | Single sine wave with `freq`, `amplitude`, and `phase` control |
 | `generate_square` | Square wave with configurable `duty` cycle (0–1; default 0.5) |
 | `generate_sawtooth` | Sawtooth wave that rises linearly from −1 to +1 per period |
@@ -62,13 +62,17 @@ examples/  # standalone example scripts
 
 ## Filters
 
-`src/python/filters.py` provides three second-order biquad filters based on the Audio EQ Cookbook formulas. Each function takes a signal array and returns a filtered array of the same length.
+`src/python/filters.py` provides seven second-order biquad filters based on the Audio EQ Cookbook formulas. Each function takes a signal array and returns a filtered array of the same length.
 
 | Function | Description |
-|---|---|
+| --- | --- |
 | `lowpass(signal, cutoff, fs, Q=0.707)` | 2nd-order Butterworth-style low-pass; passes below `cutoff`, attenuates above; passes DC at unity gain |
 | `highpass(signal, cutoff, fs, Q=0.707)` | 2nd-order Butterworth-style high-pass; passes above `cutoff`, attenuates below; rejects DC |
 | `bandpass(signal, cutoff, fs, Q=1.0)` | 2nd-order band-pass with constant 0 dB peak gain; bandwidth = `cutoff / Q`; rejects DC |
+| `notch(signal, cutoff, fs, Q=1.0)` | 2nd-order notch (band-reject); passes DC and Nyquist at unity gain, creates a null at `cutoff`; higher Q gives a narrower notch |
+| `allpass(signal, cutoff, fs, Q=0.707)` | 2nd-order all-pass; unity magnitude at all frequencies, phase shifts by −360° from DC to Nyquist with steepest transition at `cutoff` |
+| `lowshelf(signal, cutoff, fs, gain_db=6.0)` | 2nd-order low shelf; boosts or cuts frequencies below `cutoff` by `gain_db` dB; unity gain above `cutoff` |
+| `highshelf(signal, cutoff, fs, gain_db=6.0)` | 2nd-order high shelf; boosts or cuts frequencies above `cutoff` by `gain_db` dB; unity gain below `cutoff` |
 
 `Q` controls the sharpness of the transition: `Q=0.707` gives a maximally-flat (Butterworth) response; higher values produce a resonant peak near the cutoff frequency and a narrower passband for the band-pass filter.
 

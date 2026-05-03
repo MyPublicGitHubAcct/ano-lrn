@@ -6,8 +6,11 @@ import numpy as np
 from python.generators import (
     generate_chirp,
     generate_dc,
+    generate_half_nyquist,
     generate_impulse,
+    generate_nyquist,
     generate_pink_noise,
+    generate_quarter_nyquist,
     generate_sawtooth,
     generate_sine,
     generate_square,
@@ -76,6 +79,18 @@ PLOTS = [
     {
         "title": "DC (amplitude=1)",
         "fn": lambda: generate_dc(fs=FS, duration=_ms(10), amplitude=1.0),
+    },
+    {
+        "title": "Nyquist (fs/2)",
+        "fn": lambda: generate_nyquist(fs=FS, duration=_ms(0.5)),
+    },
+    {
+        "title": "Half-Nyquist (fs/4)",
+        "fn": lambda: generate_half_nyquist(fs=FS, duration=_ms(1.0)),
+    },
+    {
+        "title": "Quarter-Nyquist (fs/8)",
+        "fn": lambda: generate_quarter_nyquist(fs=FS, duration=_ms(2.0)),
     },
 ]
 

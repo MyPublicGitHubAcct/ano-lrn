@@ -2,17 +2,18 @@
 
 ## Up next
 
+### Organize generators and filters by type
+
+Group each generator and filter under a named type category (e.g. periodic, noise, transient for generators; shelving, eq, dynamic for filters):
+
+- Add a `type` label or grouping to each generator in `src/python/generators.py` and each filter in `src/python/filters.py`
+- Reorganize `docs/generators.md` and `docs/filters.md` so each section is grouped by type, with a summary table per group
+- Split `examples/plot_filters.py` and `examples/plot_generators.py` into per-type example scripts (e.g. `examples/plot_filters_eq.py`, `examples/plot_generators_noise.py`) so each script demonstrates one coherent family of signals or filters
+
+---
+
+## Completed
+
 ### Complete the Audio EQ Cookbook filter set
 
-Add notch (band-reject), all-pass, low-shelf, and high-shelf biquad filters to `src/python/filters.py`, following the same pattern as the existing lowpass/highpass/bandpass:
-
-- Private `_coeffs` helper per filter type
-- Public function with `(signal, cutoff, fs, Q)` signature
-- Tests in `tests/test_filters.py`
-- Plots in `examples/plot_filters.py`
-- DSP concepts documented in `docs/filters.md`
-- README table updated
-
-Notes:
-- Shelf filters take a `gain_db` parameter instead of Q (gain at DC for low-shelf, gain at Nyquist for high-shelf)
-- All-pass has unity magnitude response at all frequencies; only the phase changes — test via group delay rather than RMS attenuation
+Added notch, all-pass, low-shelf, and high-shelf biquad filters to `src/python/filters.py`. Each has a private `_coeffs` helper and a public function. Tests added to `tests/test_filters.py` (185 total passing). Plots added to `examples/plot_filters.py` as a second 2×4 figure. DSP theory documented in `docs/filters.md`. README table updated to list all seven filters.
