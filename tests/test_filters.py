@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from python.filters import allpass, bandpass, dc_block, highpass, highshelf, lowpass, lowshelf, notch
+from python.filters import allpass, bandpass, dc_block, highpass, highshelf, lowpass, lowshelf, moog_ladder, notch
 from python.generators import (
     generate_dc,
     generate_half_nyquist,
@@ -697,6 +697,79 @@ def test_dc_block_attenuates_sub_sonic():
     _, sig = generate_sine(freq=2.0, fs=FS, duration=DURATION)
     out = dc_block(sig, cutoff=20.0, fs=FS)
     assert _steady_rms(out) / _steady_rms(sig) < 0.15
+
+
+# ── Moog ladder filter ────────────────────────────────────────────────────────
+
+def test_moog_ladder_output_shape():
+    """
+    What:   moog_ladder returns a 1-D array with the same length as its input.
+    Input:  1-second sine at 440 Hz, cutoff=1000 Hz.
+    Output: len(output) == len(input).
+    Why:    Shape mismatch would desynchronise any sample-aligned pipeline.
+    """
+    signal = _sine(440.0)
+    out = moog_ladder(signal, cutoff=1000.0, fs=FS)
+    assert out.shape == signal.shape
+
+
+def test_moog_ladder_passes_low_freq():
+    """
+    What:   A sine well below the cutoff passes through with near-unity gain.
+    Input:  100 Hz sine, cutoff=1000 Hz, resonance=0.
+    Output: steady-state RMS ratio (output / input) > 0.9.
+    Why:    At resonance=0 each 1-pole LP stage attenuates 100 Hz by < 0.05 dB;
+            four stages combined lose less than 0.2 dB — a ratio below 0.9 would
+            mean the passband gain is wrong.
+    """
+    sig = _sine(100.0)
+    out = moog_ladder(sig, cutoff=1000.0, fs=FS, resonance=0.0)
+    assert _steady_rms(out) / _steady_rms(sig) > 0.9
+
+
+def test_moog_ladder_attenuates_high_freq():
+    """
+    What:   A sine well above the cutoff is strongly attenuated.
+    Input:  10000 Hz sine, cutoff=1000 Hz, resonance=0.
+    Output: steady-state RMS ratio (output / input) < 0.01.
+    Why:    A 4-pole filter 1 decade into the stopband attenuates by (10)^4 = 80 dB;
+            even accounting for the bilinear warp the ratio should be far below 0.01,
+            confirming the 24 dB/oct rolloff is active.
+    """
+    sig = _sine(10000.0)
+    out = moog_ladder(sig, cutoff=1000.0, fs=FS, resonance=0.0)
+    assert _steady_rms(out) / _steady_rms(sig) < 0.01
+
+
+def test_moog_ladder_passes_dc():
+    """
+    What:   A DC signal passes through at unity gain when resonance=0.
+    Input:  DC at amplitude=1.0, cutoff=1000 Hz, resonance=0.
+    Output: steady-state RMS of output ≈ 1.0 (within 0.01).
+    Why:    H(0) = 1 when k=0: each ZDF 1-pole LP has unity DC gain, and without
+            feedback there is nothing to redistribute the energy. (With nonzero
+            resonance, DC gain becomes 1/(1+k), so this test isolates the
+            zero-resonance case.)
+    """
+    out = moog_ladder(_dc(1.0), cutoff=1000.0, fs=FS, resonance=0.0)
+    assert _steady_rms(out) == pytest.approx(1.0, abs=0.01)
+
+
+def test_moog_ladder_resonance_boosts_at_cutoff():
+    """
+    What:   Higher resonance produces a higher amplitude at the cutoff frequency.
+    Input:  1000 Hz sine, cutoff=1000 Hz; resonance=0 vs resonance=0.8.
+    Output: RMS ratio at resonance=0.8 > RMS ratio at resonance=0.
+    Why:    At resonance=0, four cascaded 1-pole stages attenuate fc by −12 dB
+            (each stage is −3 dB at its own cutoff). The feedback path (k > 0)
+            creates a resonant peak near fc; at k=3.2 (resonance=0.8) the peak
+            lifts the response well above the k=0 level. A failure here means the
+            feedback is disconnected or has the wrong sign.
+    """
+    sig = _sine(1000.0)
+    ratio_low = _steady_rms(moog_ladder(sig, cutoff=1000.0, fs=FS, resonance=0.0)) / _steady_rms(sig)
+    ratio_high = _steady_rms(moog_ladder(sig, cutoff=1000.0, fs=FS, resonance=0.8)) / _steady_rms(sig)
+    assert ratio_high > ratio_low
 
 
 def test_dc_block_minus3db_at_cutoff():

@@ -274,6 +274,75 @@ A and α are defined identically to the low-shelf. All coefficients are divided 
 
 ---
 
+## ZDF Ladder
+
+### Moog ladder filter (`moog_ladder`)
+
+**Purpose:** Emulates the transistor-ladder filter in the Minimoog synthesizer — a 4-pole (24 dB/octave) lowpass with voltage-controlled resonance, including self-oscillation at maximum resonance.
+
+#### Topology
+
+Four identical first-order ZDF (zero-delay feedback) lowpass stages are chained in series, with the output of the final stage fed back to the input:
+
+```text
+x ──(−k·y4)──▶ [stage 1] ──▶ [stage 2] ──▶ [stage 3] ──▶ [stage 4] ──▶ y4
+       ▲                                                          │
+       └──────────────────────────────────────────────────────────┘
+```
+
+Each stage is a bilinear-transformed 1-pole analog lowpass. The "zero-delay" part means the feedback is resolved algebraically within each sample rather than delayed by one sample — the output y4 for sample n is solved simultaneously with its own contribution to the feedback.
+
+#### ZDF 1-pole stage
+
+Using the topology-preserving transform (Zavalishin), with integrator gain `g = tan(π · cutoff / fs)` and `G = g / (1 + g)`:
+
+```text
+v[n] = (u[n] − s[n−1]) · G          # virtual integrator input
+y[n] = v[n] + s[n−1]                # stage output (lowpass)
+s[n] = y[n] + v[n]                  # state update (= 2·v + s[n−1])
+```
+
+`s` is the single delay element; there are four independent states `s1`–`s4`.
+
+#### Solving for y4 without unit delay
+
+The four stage equations and the feedback `u1 = x − k·y4` form a linear system solvable in closed form. Substituting through the chain:
+
+```text
+y4 = (G⁴·x + G³·S1 + G²·S2 + G·S3 + S4) / (1 + k·G⁴)
+```
+
+where `Sk = sk / (1 + g)` is the normalised state contribution from the previous sample. Once `y4` is known, `u1` is determined, and `y1`–`y4` are computed forward through the stages to update all four states.
+
+#### Parameters
+
+| Parameter | Range | Effect |
+| --- | --- | --- |
+| `cutoff` | 20–20000 Hz | −3 dB point of each individual 1-pole stage |
+| `resonance` | 0–1 | Feedback coefficient k = resonance × 4 |
+
+- **resonance = 0** (k = 0): four independent 1-pole stages; flat passband, −12 dB at `cutoff`, −24 dB/octave rolloff.
+- **resonance → 1** (k → 4): strong resonant peak at `cutoff`; at exactly k = 4 the poles sit on the unit circle and the filter sustains free oscillation at `cutoff` Hz.
+
+#### Moog ladder frequency response
+
+- **H(0)** = 1 / (1 + k): DC gain is reduced by the feedback. At resonance = 0 the DC gain is unity; at resonance = 1 (k = 4) it is 0.2 (−14 dB).
+- **Roll-off**: −80 dB/decade (−24 dB/octave) asymptotically — the defining characteristic of a 4-pole filter.
+- **Resonant peak**: rises from −12 dB at k = 0 to +∞ at k = 4, creating the characteristic "Moog sound" with high resonance.
+
+#### Comparison with biquad lowpass
+
+| Property | `lowpass` (biquad) | `moog_ladder` |
+| --- | --- | --- |
+| Order | 2nd | 4th |
+| Roll-off | −40 dB/decade | −80 dB/decade |
+| Resonance control | Q factor | k = resonance × 4 |
+| Self-oscillation | No (poles always inside unit circle) | Yes (at resonance = 1) |
+| DC gain | 1 (always) | 1 / (1 + k) |
+| Implementation | `scipy.signal.lfilter` | Sample-by-sample loop |
+
+---
+
 ## Utility
 
 ### DC blocking filter (`dc_block`)
