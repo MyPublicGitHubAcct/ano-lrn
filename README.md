@@ -76,6 +76,114 @@ examples/  # standalone example scripts
 
 `Q` controls the sharpness of the transition: `Q=0.707` gives a maximally-flat (Butterworth) response; higher values produce a resonant peak near the cutoff frequency and a narrower passband for the band-pass filter.
 
+## Effects
+
+Each effect family lives in its own module under `src/python/`. All effect functions take a signal array as their first argument and return a processed signal (or a tuple of signals for stereo outputs).
+
+### Delay (`delay.py`)
+
+| Function | Key parameters | Description |
+| --- | --- | --- |
+| `delay_line(signal, delay_samples)` | `delay_samples` | Pure integer-sample delay |
+| `feedback_delay(signal, delay_samples, feedback=0.5)` | `feedback` | IIR feedback comb filter; exponential echoes |
+| `comb_filter(signal, delay_samples, gain=0.5)` | `gain` | FIR feedforward comb; peaks and notches at fs/D intervals |
+
+### Modulator (`modulator.py`)
+
+| Function | Key parameters | Description |
+| --- | --- | --- |
+| `tremolo(signal, rate, depth, fs)` | `rate`, `depth` | Sinusoidal LFO amplitude modulation |
+| `ring_modulate(signal, carrier_freq, fs)` | `carrier_freq` | Multiply by cosine; produces sidebands |
+| `vibrato(signal, rate, depth_samples, fs)` | `rate`, `depth_samples` | Fractional-delay pitch modulation |
+
+### Nonlinear (`nonlinear.py`)
+
+| Function | Key parameters | Description |
+| --- | --- | --- |
+| `hard_clip(signal, threshold=1.0)` | `threshold` | Symmetrical amplitude clipping |
+| `soft_clip(signal, drive=1.0)` | `drive` | Tanh saturation; bounded output |
+| `waveshape(signal, coeffs)` | `coeffs` | Polynomial waveshaping with explicit harmonic control |
+| `bitcrush(signal, bits=8)` | `bits` | Amplitude quantisation to N-bit resolution |
+
+### Spatial (`spatial.py`)
+
+| Function | Key parameters | Returns | Description |
+| --- | --- | --- | --- |
+| `pan(signal, position)` | `position` ∈ [−1, +1] | `(left, right)` | Equal-power stereo panning |
+| `stereo_widen(left, right, width=1.0)` | `width` | `(left, right)` | M/S stereo width control |
+| `haas(signal, delay_samples)` | `delay_samples` | `(left, right)` | Haas precedence effect |
+
+### Time Segment (`time_segment.py`)
+
+| Function | Key parameters | Description |
+| --- | --- | --- |
+| `apply_window(signal, window_type='hann')` | `window_type` | Multiply signal by window function |
+| `frame(signal, frame_size, hop_size)` | `frame_size`, `hop_size` | Segment into overlapping 2D frame array |
+| `overlap_add(frames, hop_size, window_type='hann')` | `hop_size` | OLA reconstruction from frames |
+
+### Time-Frequency (`time_frequency.py`)
+
+| Function | Key parameters | Returns | Description |
+| --- | --- | --- | --- |
+| `stft(signal, frame_size=2048, hop_size=512, window='hann')` | `frame_size`, `hop_size` | complex 2D array | Short-time Fourier transform |
+| `istft(S, hop_size=512, window='hann')` | `hop_size` | 1D signal | Inverse STFT via overlap-add |
+| `spectrogram(signal, frame_size=2048, hop_size=512)` | `frame_size`, `hop_size` | real 2D array | Magnitude spectrogram in dB |
+
+### Source-Filter (`source_filter.py`)
+
+| Function | Key parameters | Description |
+| --- | --- | --- |
+| `lpc_coeffs(signal, order=12)` | `order` | Autocorrelation LPC analysis; returns predictor coefficients |
+| `lpc_synthesize(excitation, coeffs)` | `coeffs` | All-pole synthesis filter (speech vocoder) |
+| `formant_filter(signal, formant_freqs, bandwidths, fs)` | `formant_freqs`, `bandwidths` | Cascade of 2nd-order resonators at formant frequencies |
+
+### Adaptive (`adaptive.py`)
+
+| Function | Key parameters | Returns | Description |
+| --- | --- | --- | --- |
+| `lms(desired, reference, filter_order=32, mu=0.01)` | `filter_order`, `mu` | `(output, error, weights)` | LMS adaptive FIR filter |
+| `nlms(desired, reference, filter_order=32, mu=0.5, eps=1e-8)` | `mu`, `eps` | `(output, error, weights)` | Normalised LMS; stable across input levels |
+
+### Spectral (`spectral.py`)
+
+| Function | Key parameters | Returns | Description |
+| --- | --- | --- | --- |
+| `spectral_centroid(signal, fs, frame_size=2048, hop_size=512)` | `fs` | Hz array | Frequency-weighted mean per frame |
+| `spectral_flux(signal, frame_size=2048, hop_size=512)` | `frame_size`, `hop_size` | array | Frame-to-frame magnitude change (onset detection) |
+| `spectral_gate(signal, threshold_db, frame_size=2048, hop_size=512)` | `threshold_db` | signal | Suppress STFT bins below threshold |
+
+### Warping (`warping.py`)
+
+| Function | Key parameters | Description |
+| --- | --- | --- |
+| `resample(signal, orig_fs, target_fs)` | `orig_fs`, `target_fs` | Polyphase sample-rate conversion |
+| `time_stretch(signal, rate, frame_size=2048, hop_size=512)` | `rate` | Phase-vocoder time stretch; rate > 1 = slower |
+| `pitch_shift(signal, semitones, fs, frame_size=2048, hop_size=512)` | `semitones` | Phase-vocoder pitch shift; duration unchanged |
+
+### Virtual Analog (`virtual_analog.py`)
+
+| Function | Key parameters | Description |
+| --- | --- | --- |
+| `moog_ladder(signal, cutoff, fs=44100, resonance=0.0)` | `cutoff`, `resonance` | 4-pole Moog ladder filter (Huovilainen model) |
+| `diode_clip(signal, threshold=0.7)` | `threshold` | Asymmetric diode clipping (hard positive / soft negative) |
+| `analog_saturate(signal, drive=1.0)` | `drive` | 3rd-order polynomial tube saturation |
+
+### Mixing (`mixing.py`)
+
+| Function | Key parameters | Description |
+| --- | --- | --- |
+| `gain(signal, gain_db)` | `gain_db` | Scale amplitude by dB amount |
+| `mix(signals, weights=None)` | `weights` | Weighted sum of multiple signals |
+| `crossfade(signal_a, signal_b, position)` | `position` ∈ [0, 1] | Linear blend between two signals |
+| `normalize(signal, target_db=-3.0)` | `target_db` | Scale peak to target dB level |
+
+### Source Separation (`source_separation.py`)
+
+| Function | Key parameters | Returns | Description |
+| --- | --- | --- | --- |
+| `hpss(signal, fs=44100, frame_size=2048, hop_size=512, kernel_size=31)` | `kernel_size` | `(harmonic, percussive)` | Median-filter harmonic-percussive separation |
+| `wiener_filter(mixture, source_estimate, frame_size=2048, hop_size=512)` | — | signal | Wiener mask source extraction |
+
 ## Running Tests
 
 ```sh
