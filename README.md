@@ -41,7 +41,7 @@ examples/  # standalone example scripts
 
 ## Test Signals
 
-`src/ano_lrn/generators.py` provides a set of standard audio DSP test signals. All functions return a time axis `t` and one or more signal arrays sampled at `fs` (default 44100 Hz) over `duration` seconds.
+`src/python/generators.py` provides a set of standard audio DSP test signals. All functions return a time axis `t` and one or more signal arrays sampled at `fs` (default 44100 Hz) over `duration` seconds.
 
 | Function | Description |
 |---|---|
@@ -56,10 +56,13 @@ examples/  # standalone example scripts
 | `generate_chirp` | Frequency sweep from `f_start` to `f_end`; `method="logarithmic"` (default) gives perceptually uniform spacing across the audio band, `method="linear"` gives uniform Hz spacing |
 | `generate_dc` | Constant signal at `amplitude`; useful for testing DC rejection and offset handling |
 | `generate_multi_tone` | Normalized sum of sinusoids at the given `freqs` list; peak is scaled to `amplitude`; use this to verify a filter selectively passes or rejects specific frequencies |
+| `generate_nyquist` | Alternating `−1, 1, −1, 1, …` — a cosine at exactly fs/2; the highest representable frequency in a discrete system |
+| `generate_half_nyquist` | Pattern `−1, 0, 1, 0, …` — a cosine at fs/4 |
+| `generate_quarter_nyquist` | Pattern `−1, −0.707, 0, 0.707, 1, …` — a cosine at fs/8 |
 
 ## Filters
 
-`src/ano_lrn/filters.py` provides three second-order biquad filters based on the Audio EQ Cookbook formulas. Each function takes a signal array and returns a filtered array of the same length.
+`src/python/filters.py` provides three second-order biquad filters based on the Audio EQ Cookbook formulas. Each function takes a signal array and returns a filtered array of the same length.
 
 | Function | Description |
 |---|---|

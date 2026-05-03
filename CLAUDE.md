@@ -25,10 +25,10 @@ uv pip install -e .
 
 ## Architecture
 
-All generator functions share the same signature shape: positional DSP parameters (`freq`, `fs`, `duration`, `amplitude`, …) followed by signal-specific options. They return a tuple of `(t, signal)` — a time axis array and one or more signal arrays, all sampled at `fs` Hz over `duration` seconds. The private `_time_axis(fs, duration)` helper in [src/ano_lrn/generators.py](src/ano_lrn/generators.py) is the canonical way to build the time axis.
+All generator functions share the same signature shape: positional DSP parameters (`freq`, `fs`, `duration`, `amplitude`, …) followed by signal-specific options. They return a tuple of `(t, signal)` — a time axis array and one or more signal arrays, all sampled at `fs` Hz over `duration` seconds. The private `_time_axis(fs, duration)` helper in [src/python/generators.py](src/python/generators.py) is the canonical way to build the time axis.
 
-- [src/ano_lrn/generators.py](src/ano_lrn/generators.py) — all test signal generators (sine, square, sawtooth, triangle, noise, impulse, step, chirp, DC)
-- [src/ano_lrn/filters.py](src/ano_lrn/filters.py) — biquad lowpass, highpass, bandpass filters (Audio EQ Cookbook)
+- [src/python/generators.py](src/python/generators.py) — all test signal generators (sine, square, sawtooth, triangle, noise, impulse, step, chirp, DC)
+- [src/python/filters.py](src/python/filters.py) — biquad lowpass, highpass, bandpass filters (Audio EQ Cookbook)
 - [examples/](examples/) — standalone runnable scripts; not part of the package
 - [tests/](tests/) — pytest tests; use FFT-based frequency analysis to verify spectral correctness
 - [docs/generators.md](docs/generators.md) — DSP concepts for each generator (spectra, formulas, use cases)

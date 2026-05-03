@@ -1,7 +1,13 @@
 import numpy as np
 import pytest
-from ano_lrn.filters import bandpass, highpass, lowpass
-from ano_lrn.generators import generate_dc, generate_sine
+from python.filters import bandpass, highpass, lowpass
+from python.generators import (
+    generate_dc,
+    generate_half_nyquist,
+    generate_nyquist,
+    generate_quarter_nyquist,
+    generate_sine,
+)
 
 FS = 44100
 DURATION = 1.0
@@ -236,3 +242,154 @@ def test_bandpass_higher_Q_narrows_bandwidth():
     ratio_low_Q = _steady_rms(bandpass(sig, cutoff=1000.0, fs=FS, Q=1.0)) / _steady_rms(sig)
     ratio_high_Q = _steady_rms(bandpass(sig, cutoff=1000.0, fs=FS, Q=8.0)) / _steady_rms(sig)
     assert ratio_high_Q < ratio_low_Q
+
+
+# ── Nyquist-frequency signal tests ────────────────────────────────────────────
+
+def _nyquist_sig() -> np.ndarray:
+    _, w = generate_nyquist(fs=FS, duration=DURATION)
+    return w
+
+
+def _half_nyquist_sig() -> np.ndarray:
+    _, w = generate_half_nyquist(fs=FS, duration=DURATION)
+    return w
+
+
+def _quarter_nyquist_sig() -> np.ndarray:
+    _, w = generate_quarter_nyquist(fs=FS, duration=DURATION)
+    return w
+
+
+# Nyquist (fs/2 = 22050 Hz)
+
+def test_lowpass_rejects_nyquist():
+    """
+    What:   A low-pass filter produces near-zero output for the Nyquist signal.
+    Input:  Nyquist signal (fs/2 = 22050 Hz), cutoff=1000 Hz, default Q.
+    Output: steady-state RMS < 1e-6.
+    Why:    The LP biquad has a structural zero at z = −1 (Nyquist): the three
+            b-coefficients sum to zero at ω=π, so any input at exactly fs/2 is
+            cancelled by the FIR part of the filter. This confirms the zero is
+            present and the filter is not accidentally passing the highest
+            representable frequency.
+    """
+    out = lowpass(_nyquist_sig(), cutoff=1000.0, fs=FS)
+    assert _steady_rms(out) < 1e-6
+
+
+def test_highpass_passes_nyquist():
+    """
+    What:   A high-pass filter passes the Nyquist signal at unity gain.
+    Input:  Nyquist signal (fs/2 = 22050 Hz), cutoff=1000 Hz, default Q.
+    Output: steady-state RMS ratio (output / input) > 0.99.
+    Why:    H(π) = 1 exactly for the HP biquad: the numerator evaluates to
+            2(1 + cos ω₀) and the denominator to the same value at z = −1,
+            giving unity gain regardless of cutoff or Q. A ratio below 1 would
+            indicate a coefficient error that misplaces the gain at the band edge.
+    """
+    sig = _nyquist_sig()
+    out = highpass(sig, cutoff=1000.0, fs=FS)
+    assert _steady_rms(out) / _steady_rms(sig) > 0.99
+
+
+def test_bandpass_rejects_nyquist():
+    """
+    What:   A band-pass filter produces near-zero output for the Nyquist signal.
+    Input:  Nyquist signal (fs/2 = 22050 Hz), cutoff=1000 Hz, default Q.
+    Output: steady-state RMS < 1e-6.
+    Why:    The BP biquad also has a structural zero at Nyquist (b0 + b2 = 0 at
+            ω=π). A band-pass must reject both DC and Nyquist; a non-zero output
+            would mean the Nyquist component is leaking into the passband.
+    """
+    out = bandpass(_nyquist_sig(), cutoff=1000.0, fs=FS)
+    assert _steady_rms(out) < 1e-6
+
+
+# Half-Nyquist (fs/4 = 11025 Hz)
+
+def test_lowpass_attenuates_half_nyquist():
+    """
+    What:   A low-pass filter heavily attenuates a signal at fs/4.
+    Input:  Half-Nyquist signal (11025 Hz), cutoff=1000 Hz, default Q.
+    Output: steady-state RMS ratio (output / input) < 0.02.
+    Why:    11025 Hz is 11× above the cutoff; a 2nd-order rolloff gives
+            attenuation of (11)² ≈ 100× (≈40 dB). A ratio above 0.02 would
+            indicate the stopband rolloff is not working.
+    """
+    sig = _half_nyquist_sig()
+    out = lowpass(sig, cutoff=1000.0, fs=FS)
+    assert _steady_rms(out) / _steady_rms(sig) < 0.02
+
+
+def test_highpass_passes_half_nyquist():
+    """
+    What:   A high-pass filter passes a signal at fs/4 with negligible attenuation.
+    Input:  Half-Nyquist signal (11025 Hz), cutoff=1000 Hz, default Q.
+    Output: steady-state RMS ratio (output / input) > 0.95.
+    Why:    11025 Hz is well into the passband of a 1000 Hz high-pass; significant
+            attenuation would indicate a passband gain error or coefficient swap.
+    """
+    sig = _half_nyquist_sig()
+    out = highpass(sig, cutoff=1000.0, fs=FS)
+    assert _steady_rms(out) / _steady_rms(sig) > 0.95
+
+
+def test_bandpass_passes_half_nyquist():
+    """
+    What:   A band-pass filter centred at fs/4 passes the half-Nyquist signal.
+    Input:  Half-Nyquist signal (11025 Hz), cutoff=fs/4=11025 Hz, Q=4.
+    Output: steady-state RMS ratio (output / input) > 0.85.
+    Why:    The cookbook BP has 0 dB peak gain at f0; feeding a signal at exactly
+            the centre frequency is the tightest possible check that the peak is
+            placed correctly. A ratio below 0.85 would mean the centre frequency
+            is shifted or the gain is wrong.
+    """
+    sig = _half_nyquist_sig()
+    out = bandpass(sig, cutoff=FS / 4, fs=FS, Q=4.0)
+    assert _steady_rms(out) / _steady_rms(sig) > 0.85
+
+
+# Quarter-Nyquist (fs/8 = 5512.5 Hz)
+
+def test_lowpass_attenuates_quarter_nyquist():
+    """
+    What:   A low-pass filter attenuates a signal at fs/8.
+    Input:  Quarter-Nyquist signal (5512.5 Hz), cutoff=1000 Hz, default Q.
+    Output: steady-state RMS ratio (output / input) < 0.1.
+    Why:    5512.5 Hz is 5.5× above the cutoff; a 2nd-order rolloff gives
+            attenuation of (5.5)² ≈ 30× (≈30 dB), so the ratio should be well
+            below 0.1. This tests the stopband a full octave below the
+            half-Nyquist case, confirming rolloff across the upper spectrum.
+    """
+    sig = _quarter_nyquist_sig()
+    out = lowpass(sig, cutoff=1000.0, fs=FS)
+    assert _steady_rms(out) / _steady_rms(sig) < 0.1
+
+
+def test_highpass_passes_quarter_nyquist():
+    """
+    What:   A high-pass filter passes a signal at fs/8 with negligible attenuation.
+    Input:  Quarter-Nyquist signal (5512.5 Hz), cutoff=1000 Hz, default Q.
+    Output: steady-state RMS ratio (output / input) > 0.95.
+    Why:    5512.5 Hz is well into the passband of a 1000 Hz high-pass; this
+            complements the half-Nyquist passband test by confirming flat gain
+            one octave lower.
+    """
+    sig = _quarter_nyquist_sig()
+    out = highpass(sig, cutoff=1000.0, fs=FS)
+    assert _steady_rms(out) / _steady_rms(sig) > 0.95
+
+
+def test_bandpass_passes_quarter_nyquist():
+    """
+    What:   A band-pass filter centred at fs/8 passes the quarter-Nyquist signal.
+    Input:  Quarter-Nyquist signal (5512.5 Hz), cutoff=fs/8=5512.5 Hz, Q=4.
+    Output: steady-state RMS ratio (output / input) > 0.85.
+    Why:    Same rationale as the half-Nyquist centre-frequency test, but at a
+            lower frequency. Confirms the BP centre-frequency placement is correct
+            across different parts of the spectrum.
+    """
+    sig = _quarter_nyquist_sig()
+    out = bandpass(sig, cutoff=FS / 8, fs=FS, Q=4.0)
+    assert _steady_rms(out) / _steady_rms(sig) > 0.85

@@ -1,6 +1,6 @@
 # Biquad Filters
 
-All filters live in `src/ano_lrn/filters.py`. Each takes a signal array and returns a filtered array of the same length. They are implemented as second-order IIR (Infinite Impulse Response) filters using the **biquad** topology, following the [Audio EQ Cookbook](https://www.musicdsp.org/en/latest/Filters/197-rbj-audio-eq-cookbook.html) coefficient formulas.
+All filters live in `src/python/filters.py`. Each takes a signal array and returns a filtered array of the same length. They are implemented as second-order IIR (Infinite Impulse Response) filters using the **biquad** topology, following the [Audio EQ Cookbook](https://www.musicdsp.org/en/latest/Filters/197-rbj-audio-eq-cookbook.html) coefficient formulas.
 
 ---
 

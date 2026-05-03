@@ -1,11 +1,14 @@
 import numpy as np
 import pytest
-from ano_lrn.generators import (
+from python.generators import (
     generate_chirp,
     generate_dc,
+    generate_half_nyquist,
     generate_impulse,
     generate_multi_tone,
+    generate_nyquist,
     generate_pink_noise,
+    generate_quarter_nyquist,
     generate_sawtooth,
     generate_sine,
     generate_square,
@@ -476,6 +479,63 @@ def test_dc_constant_value(dc_amplitude):
     """
     _, w = generate_dc(amplitude=dc_amplitude)
     assert np.all(w == pytest.approx(dc_amplitude))
+
+
+# ── generate_nyquist / generate_half_nyquist / generate_quarter_nyquist ───────
+
+_NYQUIST_GENERATORS = [generate_nyquist, generate_half_nyquist, generate_quarter_nyquist]
+
+# Expected repeating pattern for each generator (one full period at fs=8).
+_NYQUIST_PATTERNS = {
+    generate_nyquist:         np.array([-1.0, 1.0]),
+    generate_half_nyquist:    np.array([-1.0, 0.0, 1.0, 0.0]),
+    generate_quarter_nyquist: np.array([-1.0, -1/np.sqrt(2), 0.0, 1/np.sqrt(2),
+                                         1.0,  1/np.sqrt(2), 0.0, -1/np.sqrt(2)]),
+}
+
+
+@pytest.fixture(params=_NYQUIST_GENERATORS, ids=lambda f: f.__name__)
+def nyquist_gen(request):
+    return request.param
+
+
+def test_nyquist_output_shapes(nyquist_gen):
+    """
+    What:   Each Nyquist-family generator returns arrays of the expected length.
+    Input:  Default parameters (fs=44100, duration=1.0).
+    Output: t.shape == w.shape == (N,).
+    Why:    Same shape contract as all other generators.
+    """
+    t, w = nyquist_gen()
+    assert t.shape == (N,)
+    assert w.shape == (N,)
+
+
+def test_nyquist_sample_pattern(nyquist_gen):
+    """
+    What:   The output matches its defining repeating pattern exactly.
+    Input:  fs=8, duration=1.0 (8 samples — one full period for each generator).
+    Output: w == expected pattern within floating-point tolerance.
+    Why:    These generators exist to produce exact digital patterns for filter
+            testing; any deviation from the pattern would make them useless as
+            reference signals.
+    """
+    _, w = nyquist_gen(fs=8, duration=1.0)
+    expected = _NYQUIST_PATTERNS[nyquist_gen]
+    # w contains exactly one (or more) full periods; compare the first period
+    np.testing.assert_allclose(w[:len(expected)], expected, atol=1e-9)
+
+
+def test_nyquist_amplitude_scaling(nyquist_gen, amplitude):
+    """
+    What:   The amplitude parameter scales the output proportionally.
+    Input:  Each Nyquist-family generator with amplitude in {0.5, 1.0, 2.0}.
+    Output: max(|w|) == amplitude within floating-point tolerance.
+    Why:    All these signals reach ±1 at unit amplitude; scaling must apply
+            uniformly so they can be used at any gain level.
+    """
+    _, w = nyquist_gen(amplitude=amplitude)
+    assert np.max(np.abs(w)) == pytest.approx(amplitude, abs=1e-9)
 
 
 # ── generate_multi_tone ───────────────────────────────────────────────────────

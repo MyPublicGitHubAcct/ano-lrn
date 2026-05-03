@@ -4,7 +4,7 @@
 
 ### Complete the Audio EQ Cookbook filter set
 
-Add notch (band-reject), all-pass, low-shelf, and high-shelf biquad filters to `src/ano_lrn/filters.py`, following the same pattern as the existing lowpass/highpass/bandpass:
+Add notch (band-reject), all-pass, low-shelf, and high-shelf biquad filters to `src/python/filters.py`, following the same pattern as the existing lowpass/highpass/bandpass:
 
 - Private `_coeffs` helper per filter type
 - Public function with `(signal, cutoff, fs, Q)` signature

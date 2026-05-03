@@ -16,8 +16,8 @@ the test-signal generators and filters work together.
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ano_lrn.filters import bandpass, highpass, lowpass
-from ano_lrn.generators import generate_impulse
+from python.filters import bandpass, highpass, lowpass
+from python.generators import generate_impulse
 
 FS = 44100
 DURATION = 1.0  # 1 s → 0.5 Hz frequency resolution from FFT
