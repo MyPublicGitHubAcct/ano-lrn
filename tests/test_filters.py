@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from python.filters import allpass, bandpass, highpass, highshelf, lowpass, lowshelf, notch
+from python.filters import allpass, bandpass, dc_block, highpass, highshelf, lowpass, lowshelf, notch
 from python.generators import (
     generate_dc,
     generate_half_nyquist,
@@ -631,3 +631,84 @@ def test_highshelf_boosts_high_freq():
     sig = _sine(10000.0)
     out = highshelf(sig, cutoff=1000.0, fs=FS, gain_db=6.0)
     assert _steady_rms(out) / _steady_rms(sig) > 1.5
+
+
+# ── DC blocking filter ────────────────────────────────────────────────────────
+
+def test_dc_block_output_shape():
+    """
+    What:   dc_block returns a 1-D array with the same length as its input.
+    Input:  1-second DC signal at 44100 Hz.
+    Output: len(output) == len(input).
+    Why:    Shape mismatch would desynchronise any sample-aligned pipeline.
+    """
+    _, sig = generate_dc(fs=FS, duration=DURATION)
+    out = dc_block(sig, cutoff=20.0, fs=FS)
+    assert out.shape == sig.shape
+
+
+def test_dc_block_rejects_dc():
+    """
+    What:   A constant DC signal is driven to zero by the DC blocker.
+    Input:  DC at amplitude=1.0, default cutoff (20 Hz).
+    Output: steady-state RMS of output < 0.01.
+    Why:    H(1) = 0 exactly for any cutoff; the structural zero at z = 1 guarantees
+            complete DC rejection regardless of the cutoff frequency setting.
+    """
+    out = dc_block(_dc(1.0), cutoff=20.0, fs=FS)
+    assert _steady_rms(out) < 0.01
+
+
+def test_dc_block_passes_high_frequency():
+    """
+    What:   A sine well above the cutoff passes through with negligible attenuation.
+    Input:  1000 Hz sine, cutoff=20 Hz (50× above the −3 dB point).
+    Output: steady-state RMS ratio (output / input) > 0.99.
+    Why:    The 1st-order rolloff at 20 Hz attenuates 1000 Hz by < 0.02 dB;
+            a ratio below 0.99 would indicate the cutoff is placed much higher
+            than requested.
+    """
+    sig = _sine(1000.0)
+    out = dc_block(sig, cutoff=20.0, fs=FS)
+    assert _steady_rms(out) / _steady_rms(sig) > 0.99
+
+
+def test_dc_block_passes_nyquist():
+    """
+    What:   The Nyquist signal passes through at unity gain.
+    Input:  Nyquist signal (fs/2 = 22050 Hz), default cutoff (20 Hz).
+    Output: steady-state RMS ratio (output / input) ≈ 1.0 (within 0.01).
+    Why:    H(−1) = 1 exactly; numerator and denominator both evaluate to
+            2/(1+k) at z = −1, cancelling to unity for any cutoff.
+    """
+    sig = _nyquist_sig()
+    out = dc_block(sig, cutoff=20.0, fs=FS)
+    assert _steady_rms(out) / _steady_rms(sig) == pytest.approx(1.0, abs=0.01)
+
+
+def test_dc_block_attenuates_sub_sonic():
+    """
+    What:   A sine well below the cutoff is heavily attenuated.
+    Input:  2 Hz sine at amplitude=1, cutoff=20 Hz.
+    Output: steady-state RMS ratio < 0.15.
+    Why:    2 Hz is a decade below the −3 dB point; a 1st-order filter attenuates
+            by ~20 dB per decade, giving a ratio of ~0.1 at 10× below cutoff.
+    """
+    _, sig = generate_sine(freq=2.0, fs=FS, duration=DURATION)
+    out = dc_block(sig, cutoff=20.0, fs=FS)
+    assert _steady_rms(out) / _steady_rms(sig) < 0.15
+
+
+def test_dc_block_minus3db_at_cutoff():
+    """
+    What:   The gain at the cutoff frequency is −3 dB (ratio ≈ 0.707).
+    Input:  Sine at exactly cutoff = 100 Hz; cutoff=100 Hz.
+    Output: steady-state RMS ratio ≈ 1/√2 ≈ 0.707 (within 0.02).
+    Why:    The bilinear transform places the −3 dB point exactly at `cutoff`;
+            a ratio significantly different from 0.707 would mean the bilinear
+            pre-warping is missing or the coefficient formula is wrong.
+    """
+    cutoff = 100.0
+    _, sig = generate_sine(freq=cutoff, fs=FS, duration=DURATION)
+    out = dc_block(sig, cutoff=cutoff, fs=FS)
+    assert _steady_rms(out) / _steady_rms(sig) == pytest.approx(1.0 / np.sqrt(2), abs=0.02)

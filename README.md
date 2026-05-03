@@ -62,7 +62,7 @@ examples/  # standalone example scripts
 
 ## Filters
 
-`src/python/filters.py` provides seven second-order biquad filters based on the Audio EQ Cookbook formulas. Each function takes a signal array and returns a filtered array of the same length.
+`src/python/filters.py` provides biquad filters based on the Audio EQ Cookbook formulas, plus a first-order DC blocker. Each function takes a signal array and returns a filtered array of the same length.
 
 | Function | Description |
 | --- | --- |
@@ -73,6 +73,7 @@ examples/  # standalone example scripts
 | `allpass(signal, cutoff, fs, Q=0.707)` | 2nd-order all-pass; unity magnitude at all frequencies, phase shifts by −360° from DC to Nyquist with steepest transition at `cutoff` |
 | `lowshelf(signal, cutoff, fs, gain_db=6.0)` | 2nd-order low shelf; boosts or cuts frequencies below `cutoff` by `gain_db` dB; unity gain above `cutoff` |
 | `highshelf(signal, cutoff, fs, gain_db=6.0)` | 2nd-order high shelf; boosts or cuts frequencies above `cutoff` by `gain_db` dB; unity gain below `cutoff` |
+| `dc_block(signal, cutoff=20.0, fs=44100)` | 1st-order DC blocker; structural zero at DC (H(1) = 0 always); −3 dB exactly at `cutoff` Hz via bilinear transform |
 
 `Q` controls the sharpness of the transition: `Q=0.707` gives a maximally-flat (Butterworth) response; higher values produce a resonant peak near the cutoff frequency and a narrower passband for the band-pass filter.
 

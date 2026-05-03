@@ -2,12 +2,13 @@
 
 All filters live in `src/python/filters.py`. Each takes a signal array and returns a filtered array of the same length. They are implemented as second-order IIR (Infinite Impulse Response) filters using the **biquad** topology, following the [Audio EQ Cookbook](https://www.musicdsp.org/en/latest/Filters/197-rbj-audio-eq-cookbook.html) coefficient formulas.
 
-Filters are organized into two types:
+Filters are organized into three types:
 
 | Type | Filters |
 | --- | --- |
 | **EQ / parametric** | `lowpass`, `highpass`, `bandpass`, `notch`, `allpass` |
 | **Shelving** | `lowshelf`, `highshelf` |
+| **Utility** | `dc_block` |
 
 ---
 
@@ -270,3 +271,42 @@ A and α are defined identically to the low-shelf. All coefficients are divided 
 - **H(0) = 1** (DC, z = 1): numerator sums to `4A(1 − cos_w0)` and denominator to `4A(1 − cos_w0)`, giving unity gain at DC.
 - **H(π) = A²** (Nyquist, z = −1): numerator sums to `4A²(1 + cos_w0)` and denominator to `4(1 + cos_w0)`, giving gain A². In dB: `gain_db`.
 - `gain_db > 0` → boost above `cutoff`; `gain_db < 0` → cut above `cutoff`.
+
+---
+
+## Utility
+
+### DC blocking filter (`dc_block`)
+
+**Purpose:** Removes DC offset and sub-sonic content below `cutoff` Hz while leaving all higher-frequency content unchanged. Unlike the biquad high-pass filter, `dc_block` is first-order (one pole, one zero) and is specifically designed for DC removal rather than audio-band shaping.
+
+#### Coefficient derivation
+
+`dc_block` applies the bilinear transform to the first-order analog high-pass H_a(s) = s / (s + ω_c):
+
+```text
+k      = tan(π · cutoff / fs)     # bilinear pre-warp
+b      = [1/(1+k),  −1/(1+k)]
+a      = [1.0,      −(1−k)/(1+k)]
+```
+
+The bilinear transform maps the analog −3 dB frequency ω_c exactly to the digital frequency `cutoff` Hz, with no frequency-axis warping error at the cutoff.
+
+#### Frequency response
+
+- **H(1) = 0** (DC, z = 1): b0 + b1 = `1/(1+k) − 1/(1+k) = 0`. The zero at z = +1 is a structural property independent of `cutoff`; DC is always completely rejected.
+- **H(−1) = 1** (Nyquist, z = −1): numerator = `2/(1+k)`, denominator = `1 + (1−k)/(1+k) = 2/(1+k)`; these cancel to unity for any `cutoff`.
+- **−3 dB at `cutoff`**: the bilinear pre-warp guarantees the half-power point is exactly at the requested frequency.
+- **−20 dB/decade** rolloff below `cutoff` (first-order slope).
+
+#### Comparison with `highpass`
+
+| Property | `highpass` | `dc_block` |
+| --- | --- | --- |
+| Order | 2nd (biquad) | 1st |
+| Roll-off | −40 dB/decade | −20 dB/decade |
+| Q control | Yes | No |
+| DC rejection | Complete | Complete (structural zero) |
+| Typical cutoff | 20 Hz – audio band | < 20 Hz (sub-sonic) |
+
+Use `dc_block` when you only need DC and hum removal and want the flattest possible response in the audio band. Use `highpass` when you need steeper roll-off or Q control for audio filtering.
