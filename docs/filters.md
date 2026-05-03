@@ -2,6 +2,13 @@
 
 All filters live in `src/python/filters.py`. Each takes a signal array and returns a filtered array of the same length. They are implemented as second-order IIR (Infinite Impulse Response) filters using the **biquad** topology, following the [Audio EQ Cookbook](https://www.musicdsp.org/en/latest/Filters/197-rbj-audio-eq-cookbook.html) coefficient formulas.
 
+Filters are organized into two types:
+
+| Type | Filters |
+| --- | --- |
+| **EQ / parametric** | `lowpass`, `highpass`, `bandpass`, `notch`, `allpass` |
+| **Shelving** | `lowshelf`, `highshelf` |
+
 ---
 
 ## The biquad structure
@@ -46,18 +53,30 @@ The Q factor controls the width of the transition around `ω₀`. At `Q = 1/(2α
 
 ---
 
-## Low-pass filter (`lowpass`)
+## EQ / parametric
+
+Five filters that shape the frequency response by passing, attenuating, or phase-shifting specific bands. All share the same feedback (a) coefficients — only the feedforward (b) coefficients differ, controlling zero placement.
+
+| Filter | Key parameters | Passes | Rejects | Q effect |
+| --- | --- | --- | --- | --- |
+| `lowpass` | `cutoff`, `Q` | Below cutoff | Above cutoff | Higher Q → resonant peak below cutoff |
+| `highpass` | `cutoff`, `Q` | Above cutoff | Below cutoff | Higher Q → resonant peak above cutoff |
+| `bandpass` | `cutoff`, `Q` | Band around cutoff | DC and Nyquist | Higher Q → narrower passband |
+| `notch` | `cutoff`, `Q` | DC and Nyquist | Narrow band at cutoff | Higher Q → narrower notch |
+| `allpass` | `cutoff`, `Q` | All (unity magnitude) | Nothing | Higher Q → steeper phase transition |
+
+### Low-pass filter (`lowpass`)
 
 **Purpose:** Passes frequencies below `cutoff`; attenuates frequencies above it.
 
-### Low-pass coefficient set
+#### Low-pass coefficient set
 
 ```text
 b = [(1 − cos_w0)/2,  (1 − cos_w0),  (1 − cos_w0)/2]  / a0
 a = [1.0,             −2·cos_w0,      (1 − α)]          / a0
 ```
 
-### Low-pass frequency response
+#### Low-pass frequency response
 
 - **H(0) = 1** (DC, z = 1): both numerator and denominator evaluate to `(1 − cos_w0)` terms that cancel to 1, confirming unity gain at DC.
 - **H(π) ≈ 0** (Nyquist, z = −1): the numerator terms combine to zero when all `z⁻¹ = −1`.
@@ -69,11 +88,11 @@ The zeros are at z = −1 (Nyquist), creating a null there.
 
 ---
 
-## High-pass filter (`highpass`)
+### High-pass filter (`highpass`)
 
 **Purpose:** Attenuates frequencies below `cutoff`; passes frequencies above it. Rejects DC.
 
-### High-pass coefficient set
+#### High-pass coefficient set
 
 ```text
 b = [(1 + cos_w0)/2,  −(1 + cos_w0),  (1 + cos_w0)/2]  / a0
@@ -82,7 +101,7 @@ a = [1.0,              −2·cos_w0,       (1 − α)]         / a0
 
 The feedback (a) coefficients are identical to the low-pass filter — same poles, same resonance shape. Only the feedforward (b) coefficients differ; the sign flip on b1 moves the zeros from Nyquist to DC.
 
-### High-pass frequency response
+#### High-pass frequency response
 
 - **H(0) = 0** (DC, z = 1): b0 + b1 + b2 = `(1+c)/2 − (1+c) + (1+c)/2 = 0`. Zeros are at z = +1 (DC).
 - **H(π) = 1** (Nyquist): numerator and denominator evaluate to `(1 + cos_w0)` terms that cancel to 1.
@@ -93,11 +112,11 @@ The LP and HP coefficient sets are duals of each other under the substitution `c
 
 ---
 
-## Band-pass filter (`bandpass`)
+### Band-pass filter (`bandpass`)
 
 **Purpose:** Passes a band of frequencies centered on `cutoff`; attenuates both below and above. Rejects DC. Bandwidth = `cutoff / Q`.
 
-### Band-pass coefficient set (constant 0 dB peak gain)
+#### Band-pass coefficient set (constant 0 dB peak gain)
 
 ```text
 b = [α,    0,  −α]  / a0
@@ -106,7 +125,7 @@ a = [1.0,  −2·cos_w0,  (1 − α)]  / a0
 
 where `α = sin(ω₀) / (2Q)`.
 
-### Two bandpass variants
+#### Two bandpass variants
 
 The Audio EQ Cookbook defines two bandpass variants:
 
@@ -117,7 +136,7 @@ The Audio EQ Cookbook defines two bandpass variants:
 
 This implementation uses the **constant 0 dB peak gain** variant. Using the skirt-gain variant is a common mistake: the peak gain of Q means that at high Q the signal at the center frequency is amplified by a factor of Q, making the output incompatible with downstream stages that expect unity-gain filtering.
 
-### Band-pass frequency response
+#### Band-pass frequency response
 
 - **H(0) = 0**: b0 + b1 + b2 = `α + 0 − α = 0`. Zero at z = +1 (DC).
 - **H(π) = 0**: at z = −1, numerator = `α·(−1)⁰ + 0 − α·(−1)² = α − α = 0`. Zero at z = −1 (Nyquist).
@@ -125,7 +144,7 @@ This implementation uses the **constant 0 dB peak gain** variant. Using the skir
 - **Q = f₀ / BW**: higher Q narrows the passband. Q = 0.5 gives a very wide (nearly all-pass) band; Q = 10 gives a narrow resonant peak.
 - The poles are the same as LP and HP; only the zeros differ (both placed on the unit circle at DC and Nyquist to ensure zero gain there).
 
-### Bandwidth interpretation
+#### Bandwidth interpretation
 
 At −3 dB, the two edges of the passband are approximately at:
 
@@ -139,11 +158,11 @@ For high Q the approximation `BW ≈ f₀ / Q` is tight; for low Q (< 1) the asy
 
 ---
 
-## Notch filter (`notch`)
+### Notch filter (`notch`)
 
 **Purpose:** Rejects a narrow band of frequencies centered on `cutoff`; passes all other frequencies at unity gain, including DC and Nyquist.
 
-### Notch coefficient set
+#### Notch coefficient set
 
 ```text
 b = [1,          −2·cos_w0,  1        ]  / a0
@@ -152,7 +171,7 @@ a = [1.0,        −2·cos_w0,  (1 − α)  ]  / a0
 
 The denominator (a) is identical to LP, HP, and BP — same poles, same resonance structure. Only the numerator differs: the notch numerator lacks the scaling applied to b0 and b2 in the other filters, placing zeros at both DC and Nyquist simultaneously removed so that only the target frequency is rejected.
 
-### Notch frequency response
+#### Notch frequency response
 
 - **H(0) = 1** (DC, z = 1): b0 + b1 + b2 = `1 − 2cos_w0 + 1` and a0 + a1 + a2 = `(1+α) − 2cos_w0 + (1−α)` = `2 − 2cos_w0`; both sides are equal, giving unity gain at DC.
 - **H(π) = 1** (Nyquist, z = −1): b0 − b1 + b2 = `1 + 2cos_w0 + 1` and denominator = `2 + 2cos_w0`; equal, giving unity gain at Nyquist.
@@ -162,11 +181,11 @@ The denominator (a) is identical to LP, HP, and BP — same poles, same resonanc
 
 ---
 
-## All-pass filter (`allpass`)
+### All-pass filter (`allpass`)
 
 **Purpose:** Passes all frequencies at exactly unity magnitude. Only the phase changes — the filter is invisible to magnitude-based analysis but affects time alignment and phase-sensitive signal paths.
 
-### All-pass coefficient set
+#### All-pass coefficient set
 
 ```text
 b = [(1 − α),  −2·cos_w0,  (1 + α)]  / a0   =   [(1−α)/a0,  −2·cos_w0/a0,  1.0]
@@ -175,7 +194,7 @@ a = [1.0,       −2·cos_w0/a0,        (1−α)/a0]
 
 A key property: `b` is the **time-reverse of `a`** — `b[k] = a[2−k]` after normalization. This guarantees `|H(z)| = 1` on the unit circle: the numerator and denominator polynomials are mirror images, so their magnitudes cancel everywhere. Note that after normalization `b[2] = (1+α)/a0 = 1.0` exactly.
 
-### All-pass frequency response
+#### All-pass frequency response
 
 - **|H(e^jω)| = 1** for all ω: no frequency is attenuated or boosted.
 - **Phase** rotates from 0° at DC to −360° at Nyquist, with the steepest transition at `ω₀`.
@@ -184,23 +203,28 @@ A key property: `b` is the **time-reverse of `a`** — `b[k] = a[2−k]` after n
 
 ---
 
-## Low-shelf filter (`lowshelf`)
+## Shelving
 
-**Purpose:** Boosts or cuts frequencies below `cutoff` by `gain_db` dB, while leaving frequencies above `cutoff` at unity gain.
+Two filters that boost or cut a broad frequency region (low or high end) by a fixed amount in dB, tapering smoothly through a transition band around `cutoff`.
 
-This filter uses `gain_db` in place of Q. Positive `gain_db` adds gain at low frequencies (boost); negative cuts them.
+| Filter | Key parameters | Boosts/cuts | Unity gain at |
+| --- | --- | --- | --- |
+| `lowshelf` | `cutoff`, `gain_db` | Below cutoff | Nyquist |
+| `highshelf` | `cutoff`, `gain_db` | Above cutoff | DC |
 
-### Low-shelf coefficient derivation
-
-Shelf filters use a different α formula from the Q-based filters. With shelf slope `S = 1` (steepest monotonic slope):
+Shelf filters use `gain_db` instead of Q. Positive `gain_db` adds gain at the shelved end; negative cuts it. Both use shelf slope S = 1 (steepest monotonic slope), with the α formula:
 
 ```text
 A      = 10^(gain_db / 40)     # linear amplitude at the shelved end; A² = 10^(gain_db/20)
-α      = sin(ω₀) / √2          # S = 1 simplification: sin(ω₀)/2 · √[(A+1/A)·0 + 2]
+α      = sin(ω₀) / √2          # S = 1 simplification
 √A     = sqrt(A)
 ```
 
-### Low-shelf coefficient set
+### Low-shelf filter (`lowshelf`)
+
+**Purpose:** Boosts or cuts frequencies below `cutoff` by `gain_db` dB, while leaving frequencies above `cutoff` at unity gain.
+
+#### Low-shelf coefficient set
 
 ```text
 b0 =    A · [(A+1) − (A−1)·cos_w0 + 2·√A·α]
@@ -213,7 +237,7 @@ a2 =         (A+1) + (A−1)·cos_w0 − 2·√A·α
 
 All coefficients are divided by a0 before use.
 
-### Low-shelf frequency response
+#### Low-shelf frequency response
 
 - **H(0) = A²** (DC, z = 1): numerator sums to `4A²(1 − cos_w0)` and denominator to `4(1 − cos_w0)`, giving gain A². In dB: `20·log10(A²) = gain_db`.
 - **H(π) = 1** (Nyquist, z = −1): numerator sums to `4A(1 + cos_w0)` and denominator to `4A(1 + cos_w0)`, giving unity gain. The shelf only affects the low-frequency end.
@@ -222,13 +246,13 @@ All coefficients are divided by a0 before use.
 
 ---
 
-## High-shelf filter (`highshelf`)
+### High-shelf filter (`highshelf`)
 
 **Purpose:** Boosts or cuts frequencies above `cutoff` by `gain_db` dB, while leaving frequencies below `cutoff` at unity gain.
 
 The high-shelf is the spectral dual of the low-shelf, obtained by negating `cos_w0` in the denominator and reversing sign conventions in the numerator.
 
-### High-shelf coefficient set
+#### High-shelf coefficient set
 
 ```text
 b0 =    A · [(A+1) + (A−1)·cos_w0 + 2·√A·α]
@@ -241,7 +265,7 @@ a2 =         (A+1) − (A−1)·cos_w0 − 2·√A·α
 
 A and α are defined identically to the low-shelf. All coefficients are divided by a0.
 
-### High-shelf frequency response
+#### High-shelf frequency response
 
 - **H(0) = 1** (DC, z = 1): numerator sums to `4A(1 − cos_w0)` and denominator to `4A(1 − cos_w0)`, giving unity gain at DC.
 - **H(π) = A²** (Nyquist, z = −1): numerator sums to `4A²(1 + cos_w0)` and denominator to `4(1 + cos_w0)`, giving gain A². In dB: `gain_db`.

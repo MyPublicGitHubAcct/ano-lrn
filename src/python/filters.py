@@ -6,6 +6,8 @@ def _biquad(signal: np.ndarray, b: list, a: list) -> np.ndarray:
     return lfilter(b, a, signal).astype(float)
 
 
+# ── EQ / parametric ───────────────────────────────────────────────────────────
+
 def _lp_coeffs(cutoff: float, fs: int, Q: float) -> tuple:
     # Audio EQ Cookbook — Low Pass Filter
     w0 = 2 * np.pi * cutoff / fs
@@ -62,48 +64,6 @@ def _ap_coeffs(cutoff: float, fs: int, Q: float) -> tuple:
     return b, a
 
 
-def _ls_coeffs(cutoff: float, fs: int, gain_db: float) -> tuple:
-    # Audio EQ Cookbook — Low-Shelf Filter (shelf slope S = 1)
-    A = 10 ** (gain_db / 40)
-    w0 = 2 * np.pi * cutoff / fs
-    cos_w0 = np.cos(w0)
-    alpha = np.sin(w0) / np.sqrt(2)
-    sqrtA = np.sqrt(A)
-    a0 = (A + 1) + (A - 1) * cos_w0 + 2 * sqrtA * alpha
-    b = [
-        A * ((A + 1) - (A - 1) * cos_w0 + 2 * sqrtA * alpha) / a0,
-        2 * A * ((A - 1) - (A + 1) * cos_w0) / a0,
-        A * ((A + 1) - (A - 1) * cos_w0 - 2 * sqrtA * alpha) / a0,
-    ]
-    a = [
-        1.0,
-        -2 * ((A - 1) + (A + 1) * cos_w0) / a0,
-        ((A + 1) + (A - 1) * cos_w0 - 2 * sqrtA * alpha) / a0,
-    ]
-    return b, a
-
-
-def _hs_coeffs(cutoff: float, fs: int, gain_db: float) -> tuple:
-    # Audio EQ Cookbook — High-Shelf Filter (shelf slope S = 1)
-    A = 10 ** (gain_db / 40)
-    w0 = 2 * np.pi * cutoff / fs
-    cos_w0 = np.cos(w0)
-    alpha = np.sin(w0) / np.sqrt(2)
-    sqrtA = np.sqrt(A)
-    a0 = (A + 1) - (A - 1) * cos_w0 + 2 * sqrtA * alpha
-    b = [
-        A * ((A + 1) + (A - 1) * cos_w0 + 2 * sqrtA * alpha) / a0,
-        -2 * A * ((A - 1) + (A + 1) * cos_w0) / a0,
-        A * ((A + 1) + (A - 1) * cos_w0 - 2 * sqrtA * alpha) / a0,
-    ]
-    a = [
-        1.0,
-        2 * ((A - 1) - (A + 1) * cos_w0) / a0,
-        ((A + 1) - (A - 1) * cos_w0 - 2 * sqrtA * alpha) / a0,
-    ]
-    return b, a
-
-
 def lowpass(
     signal: np.ndarray,
     cutoff: float,
@@ -147,6 +107,50 @@ def allpass(
     Q: float = 0.707,
 ) -> np.ndarray:
     return _biquad(signal, *_ap_coeffs(cutoff, fs, Q))
+
+
+# ── Shelving ──────────────────────────────────────────────────────────────────
+
+def _ls_coeffs(cutoff: float, fs: int, gain_db: float) -> tuple:
+    # Audio EQ Cookbook — Low-Shelf Filter (shelf slope S = 1)
+    A = 10 ** (gain_db / 40)
+    w0 = 2 * np.pi * cutoff / fs
+    cos_w0 = np.cos(w0)
+    alpha = np.sin(w0) / np.sqrt(2)
+    sqrtA = np.sqrt(A)
+    a0 = (A + 1) + (A - 1) * cos_w0 + 2 * sqrtA * alpha
+    b = [
+        A * ((A + 1) - (A - 1) * cos_w0 + 2 * sqrtA * alpha) / a0,
+        2 * A * ((A - 1) - (A + 1) * cos_w0) / a0,
+        A * ((A + 1) - (A - 1) * cos_w0 - 2 * sqrtA * alpha) / a0,
+    ]
+    a = [
+        1.0,
+        -2 * ((A - 1) + (A + 1) * cos_w0) / a0,
+        ((A + 1) + (A - 1) * cos_w0 - 2 * sqrtA * alpha) / a0,
+    ]
+    return b, a
+
+
+def _hs_coeffs(cutoff: float, fs: int, gain_db: float) -> tuple:
+    # Audio EQ Cookbook — High-Shelf Filter (shelf slope S = 1)
+    A = 10 ** (gain_db / 40)
+    w0 = 2 * np.pi * cutoff / fs
+    cos_w0 = np.cos(w0)
+    alpha = np.sin(w0) / np.sqrt(2)
+    sqrtA = np.sqrt(A)
+    a0 = (A + 1) - (A - 1) * cos_w0 + 2 * sqrtA * alpha
+    b = [
+        A * ((A + 1) + (A - 1) * cos_w0 + 2 * sqrtA * alpha) / a0,
+        -2 * A * ((A - 1) + (A + 1) * cos_w0) / a0,
+        A * ((A + 1) + (A - 1) * cos_w0 - 2 * sqrtA * alpha) / a0,
+    ]
+    a = [
+        1.0,
+        2 * ((A - 1) - (A + 1) * cos_w0) / a0,
+        ((A + 1) - (A - 1) * cos_w0 - 2 * sqrtA * alpha) / a0,
+    ]
+    return b, a
 
 
 def lowshelf(

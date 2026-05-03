@@ -7,6 +7,7 @@ def _time_axis(fs: int, duration: float) -> np.ndarray:
     return np.arange(int(fs * duration)) / fs
 
 
+# ── Periodic ──────────────────────────────────────────────────────────────────
 
 def generate_sine(
     freq: float = 440.0,
@@ -55,6 +56,20 @@ def generate_triangle(
     return t, wave
 
 
+def generate_multi_tone(
+    freqs: List[float],
+    fs: int = 44100,
+    duration: float = 1.0,
+    amplitude: float = 1.0,
+) -> tuple[np.ndarray, np.ndarray]:
+    t = _time_axis(fs, duration)
+    wave = np.sum([np.sin(2 * np.pi * f * t) for f in freqs], axis=0)
+    peak = np.max(np.abs(wave)) + 1e-12
+    return t, amplitude * wave / peak
+
+
+# ── Noise ─────────────────────────────────────────────────────────────────────
+
 def generate_white_noise(
     fs: int = 44100,
     duration: float = 1.0,
@@ -86,6 +101,8 @@ def generate_pink_noise(
     return t, amplitude * pink
 
 
+# ── Transient ─────────────────────────────────────────────────────────────────
+
 def generate_impulse(
     fs: int = 44100,
     duration: float = 1.0,
@@ -116,6 +133,8 @@ def generate_step(
     return t, wave
 
 
+# ── Sweep ─────────────────────────────────────────────────────────────────────
+
 def generate_chirp(
     f_start: float = 20.0,
     f_end: float = 20000.0,
@@ -133,6 +152,8 @@ def generate_chirp(
         phase = 2 * np.pi * f_start * (np.exp(k * t) - 1) / k
     return t, amplitude * np.sin(phase)
 
+
+# ── Reference ─────────────────────────────────────────────────────────────────
 
 def generate_dc(
     fs: int = 44100,
@@ -171,15 +192,3 @@ def generate_quarter_nyquist(
     n = int(fs * duration)
     t = np.arange(n) / fs
     return t, amplitude * -np.cos(np.pi / 4 * np.arange(n))
-
-
-def generate_multi_tone(
-    freqs: List[float],
-    fs: int = 44100,
-    duration: float = 1.0,
-    amplitude: float = 1.0,
-) -> tuple[np.ndarray, np.ndarray]:
-    t = _time_axis(fs, duration)
-    wave = np.sum([np.sin(2 * np.pi * f * t) for f in freqs], axis=0)
-    peak = np.max(np.abs(wave)) + 1e-12
-    return t, amplitude * wave / peak

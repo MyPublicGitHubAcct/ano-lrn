@@ -2,9 +2,29 @@
 
 All generators live in `src/python/generators.py`. They share a common signature shape and return `(t, signal)` — a time axis and a signal array, both sampled at `fs` Hz over `duration` seconds.
 
+Generators are organized into five types:
+
+| Type | Generators |
+| --- | --- |
+| **Periodic** | `generate_sine`, `generate_square`, `generate_sawtooth`, `generate_triangle`, `generate_multi_tone` |
+| **Noise** | `generate_white_noise`, `generate_pink_noise` |
+| **Transient** | `generate_impulse`, `generate_step` |
+| **Sweep** | `generate_chirp` |
+| **Reference** | `generate_dc`, `generate_nyquist`, `generate_half_nyquist`, `generate_quarter_nyquist` |
+
 ---
 
-## Periodic waveforms
+## Periodic
+
+Repeating waveforms at a fixed fundamental frequency. All harmonics are exact multiples of `freq`; no anti-aliasing is applied.
+
+| Generator | Key parameters | Spectral content |
+| --- | --- | --- |
+| `generate_sine` | `freq`, `phase` | Single tone at `freq` |
+| `generate_square` | `freq`, `duty` | Odd harmonics at duty=0.5, all harmonics otherwise; 1/n decay |
+| `generate_sawtooth` | `freq` | All harmonics; 1/n decay |
+| `generate_triangle` | `freq` | Odd harmonics; 1/n² decay |
+| `generate_multi_tone` | `freqs` | Tones at each frequency in `freqs`, peak-normalized |
 
 ### Sine (`generate_sine`)
 
@@ -60,7 +80,29 @@ Use cases: testing low-order harmonic response; smoother test tone than square.
 
 ---
 
+### Multi-tone (`generate_multi_tone`)
+
+Sum of pure sinusoids at the frequencies in `freqs`, normalized so the peak amplitude equals `amplitude`:
+
+```text
+raw(t) = Σ sin(2π fₖ t)
+x(t) = amplitude · raw(t) / max(|raw(t)|)
+```
+
+Peak normalization uses the actual maximum of the discrete signal (not the theoretical worst-case) so the output amplitude is exact to floating-point precision.
+
+Use cases: verifying that a filter selectively passes or blocks specific frequencies in one pass; testing intermodulation distortion; characterizing linearity when multiple tones are present simultaneously.
+
+---
+
 ## Noise
+
+Stochastic signals with broadband spectral energy. Both generators accept an optional `seed` parameter for reproducible output.
+
+| Generator | Key parameters | Spectral shape |
+| --- | --- | --- |
+| `generate_white_noise` | `seed` | Flat (equal energy per Hz) |
+| `generate_pink_noise` | `seed` | −3 dB/octave (equal energy per octave) |
 
 ### White noise (`generate_white_noise`)
 
@@ -88,13 +130,20 @@ The `seed` parameter controls the underlying white noise RNG.
 
 ---
 
-## Deterministic test signals
+## Transient
+
+Single-event signals used to probe how a system responds to sudden changes.
+
+| Generator | Key parameters | Description |
+| --- | --- | --- |
+| `generate_impulse` | `delay` | Single non-zero sample; flat spectrum |
+| `generate_step` | `onset` | Switches from 0 to `amplitude` and holds; spectrum rolls off as 1/f |
 
 ### Impulse (`generate_impulse`)
 
 A single non-zero sample (Dirac delta approximation) at time `delay`. All other samples are zero.
 
-The Fourier transform of a Dirac delta is a constant — **flat spectrum at all frequencies**. This means that running an impulse through any LTI system and taking the FFT of the output gives the system's full frequency response in one shot. This is how `examples/plot_filters.py` derives filter frequency responses.
+The Fourier transform of a Dirac delta is a constant — **flat spectrum at all frequencies**. This means that running an impulse through any LTI system and taking the FFT of the output gives the system's full frequency response in one shot. This is how `examples/plot_filters_eq.py` derives filter frequency responses.
 
 ```text
 x[n] = A · δ[n − delay·fs]
@@ -118,27 +167,50 @@ Use cases: testing transient behavior, measuring DC gain, verifying filter stabi
 
 ---
 
+## Sweep
+
+A frequency sweep that moves continuously through a range of frequencies over time.
+
+| Generator | Key parameters | Description |
+| --- | --- | --- |
+| `generate_chirp` | `f_start`, `f_end`, `method` | Frequency sweep; logarithmic (default) or linear |
+
 ### Chirp (`generate_chirp`)
 
 A frequency sweep from `f_start` to `f_end` over `duration` seconds. Two methods are available:
 
 **Logarithmic (default)** — instantaneous frequency increases exponentially:
+
 ```text
 f(t) = f_start · e^(k·t),   k = ln(f_end / f_start) / T
 phase(t) = 2π f_start (e^(k·t) − 1) / k
 ```
+
 Each octave takes the same wall-clock time, matching the logarithmic spacing of the musical scale. Preferred for audio-band frequency response measurements.
 
 **Linear** — instantaneous frequency increases linearly:
+
 ```text
 f(t) = f_start + (f_end − f_start) · t / T
 phase(t) = 2π (f_start · t + (f_end − f_start) · t² / 2T)
 ```
+
 Equal Hz per second; concentrates dwell time at low frequencies relative to linear frequency spacing.
 
 Use cases: sweeping a filter's passband, visualizing time-frequency behavior via spectrogram.
 
 ---
+
+## Reference
+
+Fixed-frequency or constant signals with mathematically exact sample values. Useful as regression anchors and for probing specific points in the spectrum.
+
+| Generator | Frequency | First sample | Use case |
+| --- | --- | --- | --- |
+| `generate_dc` | 0 Hz | +amplitude | DC rejection / pass-through testing |
+| `generate_nyquist` | fs/2 | −1 | Low-pass stopband, high-pass passband edge |
+| `generate_half_nyquist` | fs/4 | −1 | Midband filter gain check |
+| `generate_quarter_nyquist` | fs/8 | −1 | Lower-quarter spectrum, oversampled paths |
 
 ### DC (`generate_dc`)
 
@@ -151,27 +223,6 @@ x[n] = A  for all n
 Use cases: testing DC rejection (high-pass, band-pass filters must drive this to zero); testing DC pass-through (low-pass filters must preserve it at unity gain); verifying that an algorithm does not introduce or remove a DC offset.
 
 ---
-
-### Multi-tone (`generate_multi_tone`)
-
-Sum of pure sinusoids at the frequencies in `freqs`, normalized so the peak amplitude equals `amplitude`:
-
-```text
-raw(t) = Σ sin(2π fₖ t)
-x(t) = amplitude · raw(t) / max(|raw(t)|)
-```
-
-Peak normalization uses the actual maximum of the discrete signal (not the theoretical worst-case) so the output amplitude is exact to floating-point precision.
-
-Use cases: verifying that a filter selectively passes or blocks specific frequencies in one pass; testing intermodulation distortion; characterizing linearity when multiple tones are present simultaneously.
-
----
-
-## Digital frequency references
-
-These generators produce exact discrete-time cosine sequences at fixed fractions of the sample rate. They are computed from sample indices rather than a continuous time axis, so each sample value is mathematically exact (no floating-point drift accumulates over a long buffer).
-
-All three start at phase π — i.e., `−cos(2π·freq·n/fs)` — so the first sample is always −1 and the pattern is immediately readable in a sample-level debugger.
 
 ### Nyquist (`generate_nyquist`)
 

@@ -2,17 +2,13 @@
 
 ## Up next
 
-### Organize generators and filters by type
-
-Group each generator and filter under a named type category (e.g. periodic, noise, transient for generators; shelving, eq, dynamic for filters):
-
-- Add a `type` label or grouping to each generator in `src/python/generators.py` and each filter in `src/python/filters.py`
-- Reorganize `docs/generators.md` and `docs/filters.md` so each section is grouped by type, with a summary table per group
-- Split `examples/plot_filters.py` and `examples/plot_generators.py` into per-type example scripts (e.g. `examples/plot_filters_eq.py`, `examples/plot_generators_noise.py`) so each script demonstrates one coherent family of signals or filters
-
 ---
 
 ## Completed
+
+### Organize generators and filters by type
+
+Added section comments to `src/python/generators.py` (periodic, noise, transient, sweep, reference) and `src/python/filters.py` (EQ/parametric, shelving); moved `generate_multi_tone` into the periodic group. Rewrote `docs/generators.md` and `docs/filters.md` with per-type sections and summary tables. Replaced the monolithic `examples/plot_generators.py` and `examples/plot_filters.py` with seven per-type scripts: `plot_generators_periodic.py`, `plot_generators_noise.py`, `plot_generators_transient.py`, `plot_generators_sweep.py`, `plot_generators_reference.py`, `plot_filters_eq.py`, `plot_filters_shelving.py`.
 
 ### Complete the Audio EQ Cookbook filter set
 
