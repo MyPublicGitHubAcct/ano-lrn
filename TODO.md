@@ -10,6 +10,10 @@ The existing `moog_ladder` tests in `tests/test_filters.py` confirm shape, DC pa
 
 Every filter group has a matching example script (`plot_filters_eq.py`, `plot_filters_shelving.py`, `plot_filters_ladder.py`), but `dc_block` — the only utility filter — has no plot. Add `examples/plot_filters_utility.py` showing the `dc_block` frequency response at several cutoff frequencies (e.g. 5 Hz, 20 Hz, 80 Hz), following the same structure as the other plot scripts (frequency-response panel via `freqz` or impulse response + FFT).
 
+### Add documentation for tests
+
+Describe why each test is appropriate and complete for the function being tested.  Where it is not, add TODO items to rememdy the absences.
+
 ---
 
 ## Completed
