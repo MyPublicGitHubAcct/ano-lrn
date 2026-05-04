@@ -82,3 +82,17 @@ x(t) = amplitude · raw(t) / max(|raw(t)|)
 Peak normalization uses the actual maximum of the discrete signal (not the theoretical worst-case) so the output amplitude is exact to floating-point precision.
 
 **Use cases:** verifying that a filter selectively passes or blocks specific frequencies in one pass; testing intermodulation distortion; characterizing linearity when multiple tones are present simultaneously.
+
+---
+
+## Parameter Ranges
+
+| Parameter | Applies to | Range | Notes |
+| --- | --- | --- | --- |
+| `freq` | all periodic | 0 < freq < fs/2 | No anti-aliasing; aliasing artifacts appear when freq > fs/4; practical audio range 20–20000 Hz |
+| `fs` | all | 8000–192000 Hz | Any standard audio sample rate; output length is `int(fs · duration)` samples |
+| `duration` | all | > 0 s | |
+| `amplitude` | all | any real | 0 produces silence; negative values are valid and invert polarity |
+| `phase` | sine | any real (radians) | Values outside [0, 2π] are valid; sin wraps automatically |
+| `duty` | square | [0, 1] | 0 = all −amplitude; 1 = all +amplitude; 0.5 = symmetric square wave (odd harmonics only) |
+| `freqs` | multi_tone | non-empty list | Each frequency subject to the same freq constraints above |

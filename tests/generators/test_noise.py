@@ -33,3 +33,10 @@ def test_noise_different_seeds_differ(seeded_gen, seed_pair):
 def test_pink_noise_zero_dc():
     _, w = generate_pink_noise(seed=0)
     assert abs(np.mean(w)) < 0.01
+
+
+# --- parameter range tests ---
+
+def test_noise_amplitude_zero_is_silent(seeded_gen):
+    _, w = seeded_gen(amplitude=0.0, seed=0)
+    np.testing.assert_array_equal(w, np.zeros(N))

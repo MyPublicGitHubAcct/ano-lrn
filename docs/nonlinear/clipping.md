@@ -25,3 +25,19 @@ y[n] = tanh(drive · x[n])
 The output is bounded in (−1, +1) for all inputs. Near zero the transfer function is approximately linear (tanh(x) ≈ x). As the input grows the gain compresses, producing a smooth transition from clean to saturated. Higher `drive` values move the knee lower, increasing harmonic distortion at lower input levels.
 
 **Odd symmetry:** tanh(−x) = −tanh(x), so only odd harmonics are generated for a pure sine input (3rd, 5th, 7th, …). This gives a "tube-like" character compared to the even harmonics of asymmetric distortions.
+
+---
+
+## Parameter Ranges
+
+**`hard_clip`**
+
+| Parameter | Range | Notes |
+| --- | --- | --- |
+| `threshold` | ≥ 0 | `1.0` (default) clips only signals above unit amplitude; `0` zeroes the entire output |
+
+**`soft_clip`**
+
+| Parameter | Range | Notes |
+| --- | --- | --- |
+| `drive` | ≥ 0 | `1.0` (default) is gentle saturation; higher values move the knee toward lower amplitudes; `0` zeroes the entire output |

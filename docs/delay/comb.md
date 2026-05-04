@@ -41,3 +41,21 @@ Creates alternating peaks and notches spaced by fs / D Hz. Unlike the IIR varian
 **Peak/notch spacing:** notches occur at f_notch = (2k+1) · fs / (2D) for k = 0, 1, 2, …
 
 **Use cases:** chorus, flanger, and acoustic room simulation.
+
+---
+
+## Parameter Ranges
+
+**`feedback_delay`**
+
+| Parameter | Range | Notes |
+| --- | --- | --- |
+| `delay_samples` | ≥ 1 | Integer; clamped to ≥ 1 if a smaller value is passed |
+| `feedback` | (−1, 1) | Values outside this range cause exponential growth (BIBO unstable); `feedback = 0` reduces to identity |
+
+**`comb_filter`**
+
+| Parameter | Range | Notes |
+| --- | --- | --- |
+| `delay_samples` | ≥ 1 | Integer |
+| `gain` | any real | Always BIBO stable (FIR); `gain = 0` → identity; `gain = −1` → deep notches; `gain = +1` → resonant peaks |

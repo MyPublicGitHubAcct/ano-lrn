@@ -21,3 +21,19 @@ y[n] = (1 − p) · a[n] + p · b[n]        p ∈ [0, 1]
 ```
 
 At `position = 0` the output is fully `signal_a`; at `1` it is fully `signal_b`. The summed power at the crossover point is `(0.5a + 0.5b)`, which can cause a 6 dB power dip compared to the original signals if they are coherent. Use equal-power crossfade (`cos/sin`) when a smooth loudness transition is required.
+
+---
+
+## Parameter Ranges
+
+**`mix`**
+
+| Parameter | Range | Notes |
+| --- | --- | --- |
+| `weights` | `None` or list of reals | `None` → equal weights (1/N each); weights need not sum to 1 but unnormalized sums may clip downstream |
+
+**`crossfade`**
+
+| Parameter | Range | Notes |
+| --- | --- | --- |
+| `position` | [0, 1] | Values outside [0, 1] are clamped; `0` → pure `signal_a`; `1` → pure `signal_b` |

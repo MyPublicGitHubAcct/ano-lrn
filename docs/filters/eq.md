@@ -99,3 +99,13 @@ a = [1.0,       −2·cos_w0/a0,  (1−α)/a0]
 The b coefficients are the time-reverse of a, guaranteeing |H(z)| = 1 on the unit circle.
 
 **Response:** |H(e^jω)| = 1 for all ω. Phase rotates from 0° at DC to −360° at Nyquist; steepest transition at `cutoff`. Higher Q → taller, narrower group-delay peak.
+
+---
+
+## Parameter Ranges
+
+| Parameter | Range | Notes |
+| --- | --- | --- |
+| `cutoff` | 1–21000 Hz (at 44100 Hz `fs`) | Must satisfy 0 < cutoff < fs/2; values outside this range produce undefined biquad behaviour |
+| `Q` | 0.1–20 | Controls resonance width; Q = 0.707 gives Butterworth maximally-flat response; Q < 0.5 overdamps (no resonance peak); Q > 5 produces a narrow, tall resonance peak |
+| `fs` | 8000–192000 Hz | Coefficients are re-derived per call; any standard audio sample rate is valid |

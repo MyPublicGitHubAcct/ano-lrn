@@ -185,3 +185,31 @@ def test_bandpass_passes_quarter_nyquist():
     sig = _quarter_nyquist_sig()
     out = bandpass(sig, cutoff=FS / 8, fs=FS, Q=4.0)
     assert _steady_rms(out) / _steady_rms(sig) > 0.85
+
+
+# --- parameter range tests ---
+
+def test_eq_cutoff_at_20hz_is_stable():
+    sig = _sine(440.0)
+    for filt in [lowpass, highpass, bandpass, notch, allpass]:
+        out = filt(sig, cutoff=20.0, fs=FS)
+        assert np.all(np.isfinite(out))
+
+
+def test_eq_cutoff_near_nyquist_is_stable():
+    sig = _sine(440.0)
+    for filt in [lowpass, highpass, bandpass, notch, allpass]:
+        out = filt(sig, cutoff=FS * 0.49, fs=FS)
+        assert np.all(np.isfinite(out))
+
+
+def test_lowpass_low_Q_is_stable():
+    out = lowpass(_sine(440.0), cutoff=1000.0, fs=FS, Q=0.1)
+    assert np.all(np.isfinite(out))
+
+
+def test_lowpass_high_Q_resonates_at_cutoff():
+    sig = _sine(1000.0)
+    out_low_Q = lowpass(sig, cutoff=1000.0, fs=FS, Q=0.707)
+    out_high_Q = lowpass(sig, cutoff=1000.0, fs=FS, Q=10.0)
+    assert _steady_rms(out_high_Q) > _steady_rms(out_low_Q)

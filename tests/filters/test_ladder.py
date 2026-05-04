@@ -34,3 +34,32 @@ def test_moog_ladder_resonance_boosts_at_cutoff():
     ratio_low = _steady_rms(moog_ladder(sig, cutoff=1000.0, fs=FS, resonance=0.0)) / _steady_rms(sig)
     ratio_high = _steady_rms(moog_ladder(sig, cutoff=1000.0, fs=FS, resonance=0.8)) / _steady_rms(sig)
     assert ratio_high > ratio_low
+
+
+# --- parameter range tests ---
+
+def test_moog_ladder_resonance_near_max_is_finite():
+    out = moog_ladder(_sine(440.0), cutoff=1000.0, fs=FS, resonance=0.99)
+    assert np.all(np.isfinite(out))
+
+
+def test_moog_ladder_cutoff_at_20hz_is_stable():
+    out = moog_ladder(_sine(440.0), cutoff=20.0, fs=FS, resonance=0.0)
+    assert np.all(np.isfinite(out))
+
+
+def test_moog_ladder_cutoff_at_20khz_is_stable():
+    out = moog_ladder(_sine(440.0), cutoff=20000.0, fs=FS, resonance=0.0)
+    assert np.all(np.isfinite(out))
+
+
+def test_moog_ladder_cutoff_at_20khz_passes_low_freq():
+    sig = _sine(440.0)
+    out = moog_ladder(sig, cutoff=20000.0, fs=FS, resonance=0.0)
+    assert _steady_rms(out) / _steady_rms(sig) > 0.9
+
+
+def test_moog_ladder_cutoff_at_20hz_blocks_signal():
+    sig = _sine(440.0)
+    out = moog_ladder(sig, cutoff=20.0, fs=FS, resonance=0.0)
+    assert _steady_rms(out) / _steady_rms(sig) < 0.1

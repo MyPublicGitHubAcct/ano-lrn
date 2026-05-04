@@ -36,6 +36,23 @@ def test_moog_zero_resonance_no_self_oscillation():
     assert np.all(np.isfinite(out))
 
 
+# --- parameter range tests ---
+
+def test_moog_resonance_near_one_is_finite():
+    out = moog_ladder(_sine(freq=440.0), cutoff=1000.0, fs=FS, resonance=0.99)
+    assert np.all(np.isfinite(out))
+
+
+def test_moog_cutoff_above_nyquist_is_clamped_and_stable():
+    out = moog_ladder(_sine(freq=100.0), cutoff=50000.0, fs=FS, resonance=0.0)
+    assert np.all(np.isfinite(out))
+
+
+def test_moog_cutoff_very_low_is_clamped_and_stable():
+    out = moog_ladder(_sine(freq=100.0), cutoff=0.001, fs=FS, resonance=0.0)
+    assert np.all(np.isfinite(out))
+
+
 def test_moog_ladder_four_pole_rolloff_slope():
     """Slope between 1 and 2 octaves above cutoff must exceed −16 dB/oct.
 

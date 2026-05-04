@@ -55,3 +55,25 @@ def test_triangle_peaks_reach_amplitude(amplitude):
     _, w = generate_triangle(freq=100.0, amplitude=amplitude)
     assert np.max(w) == pytest.approx(amplitude, abs=0.01)
     assert np.min(w) == pytest.approx(-amplitude, abs=0.01)
+
+
+# --- parameter range tests ---
+
+def test_square_duty_zero_is_all_negative():
+    _, w = generate_square(freq=440.0, duty=0.0, amplitude=1.0)
+    np.testing.assert_array_equal(w, np.full(N, -1.0))
+
+
+def test_square_duty_one_is_all_positive():
+    _, w = generate_square(freq=440.0, duty=1.0, amplitude=1.0)
+    np.testing.assert_array_equal(w, np.full(N, 1.0))
+
+
+def test_periodic_zero_amplitude_is_silent(periodic_gen):
+    _, w = periodic_gen(amplitude=0.0)
+    np.testing.assert_array_equal(w, np.zeros(N))
+
+
+def test_periodic_freq_near_nyquist_is_finite(periodic_gen):
+    _, w = periodic_gen(freq=FS * 0.49)
+    assert np.all(np.isfinite(w))

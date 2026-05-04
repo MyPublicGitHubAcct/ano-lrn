@@ -54,3 +54,15 @@ The tanh nonlinearity in each stage limits resonance amplitude and produces the 
 | Resonance control | Q factor | k = resonance × 4 |
 | Self-oscillation | No | Yes (at resonance = 1) |
 | Implementation | `scipy.signal.lfilter` | Sample-by-sample loop |
+
+---
+
+### Parameter behaviour at extremes
+
+| Parameter | Low extreme | High extreme |
+| --- | --- | --- |
+| `cutoff` at 20 Hz | Deep lowpass; 440 Hz signal attenuated > 90% | — |
+| `cutoff` at 20000 Hz (fs=44100) | — | Near-wideband; low frequencies pass with > 90% amplitude |
+| `resonance` at 0 | Clean 4th-order lowpass; DC gain = 1 | — |
+| `resonance` at 0.99 | — | Filter output remains finite; tanh nonlinearity limits amplitude |
+| `resonance` at 1.0 | — | Self-oscillation; output is a sustained sinusoid at `cutoff` |

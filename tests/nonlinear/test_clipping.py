@@ -54,3 +54,15 @@ def test_soft_clip_drive_increases_saturation():
     out_low = soft_clip(sig, drive=1.0)
     out_high = soft_clip(sig, drive=5.0)
     assert out_high > out_low
+
+
+# --- parameter range tests ---
+
+def test_hard_clip_zero_threshold_produces_zeros():
+    out = hard_clip(_ramp(), threshold=0.0)
+    np.testing.assert_array_equal(out, np.zeros(len(_ramp())))
+
+
+def test_soft_clip_zero_drive_produces_zeros():
+    out = soft_clip(_ramp(), drive=0.0)
+    np.testing.assert_array_equal(out, np.zeros(len(_ramp())))

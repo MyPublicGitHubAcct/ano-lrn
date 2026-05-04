@@ -30,6 +30,7 @@ a2 =         (A+1) + (A−1)·cos_w0 − 2·√A·α
 ```
 
 **Response:**
+
 - H(0) = A² → DC gain equals `gain_db` dB
 - H(π) = 1 → Nyquist always passes unchanged
 - Transition centered on `cutoff`; `gain_db = 0` → identity
@@ -52,6 +53,17 @@ a2 =         (A+1) − (A−1)·cos_w0 − 2·√A·α
 ```
 
 **Response:**
+
 - H(0) = 1 → DC always passes unchanged
 - H(π) = A² → Nyquist gain equals `gain_db` dB
 - `gain_db > 0` → boost above `cutoff`; `gain_db < 0` → cut above `cutoff`
+
+---
+
+## Parameter Ranges
+
+| Parameter | Range | Notes |
+| --- | --- | --- |
+| `cutoff` | 20–10000 Hz (at 44100 Hz `fs`) | Transition band centre; must satisfy 0 < cutoff < fs/2 |
+| `gain_db` | −18 to +18 dB | Values outside ±18 dB are mathematically valid but produce large linear gains (A² = 10^(gain_db/20)); `gain_db = 0` is the identity (passes signal unchanged) |
+| `fs` | 8000–192000 Hz | Any standard audio sample rate |
