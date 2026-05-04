@@ -25,13 +25,34 @@ uv pip install -e .
 
 ## Architecture
 
-All generator functions share the same signature shape: positional DSP parameters (`freq`, `fs`, `duration`, `amplitude`, …) followed by signal-specific options. They return a tuple of `(t, signal)` — a time axis array and one or more signal arrays, all sampled at `fs` Hz over `duration` seconds. The private `_time_axis(fs, duration)` helper in [src/python/generators.py](src/python/generators.py) is the canonical way to build the time axis.
+All generator functions share the same signature shape: positional DSP parameters (`freq`, `fs`, `duration`, `amplitude`, …) followed by signal-specific options. They return a tuple of `(t, signal)` — a time axis array and one or more signal arrays, all sampled at `fs` Hz over `duration` seconds. The private `_time_axis(fs, duration)` helper in [src/python/generators/_helpers.py](src/python/generators/_helpers.py) is the canonical way to build the time axis.
 
-- [src/python/generators.py](src/python/generators.py) — all test signal generators (sine, square, sawtooth, triangle, noise, impulse, step, chirp, DC)
-- [src/python/filters.py](src/python/filters.py) — biquad lowpass, highpass, bandpass filters (Audio EQ Cookbook)
-- [examples/](examples/) — standalone runnable scripts; not part of the package
-- [tests/](tests/) — pytest tests; use FFT-based frequency analysis to verify spectral correctness
-- [docs/generators.md](docs/generators.md) — DSP concepts for each generator (spectra, formulas, use cases)
-- [docs/filters.md](docs/filters.md) — biquad theory, coefficient derivation, and per-filter frequency response behavior
+Each top-level module under `src/python/` is a package with submodules. The `__init__.py` re-exports the public API so callers can import directly from the package (e.g. `from python.generators import generate_sine`).
 
-Tests validate shapes, amplitude bounds, and dominant frequency via FFT (`np.fft.rfft`). Follow this pattern when adding tests for new generators.
+### Source modules
+
+| Package | Submodules | Contents |
+| ------- | ---------- | -------- |
+| [generators/](src/python/generators/) | `periodic`, `noise`, `transient`, `sweep`, `reference` | Sine, square, sawtooth, triangle, noise, impulse, step, chirp, DC |
+| [filters/](src/python/filters/) | `eq`, `shelving`, `ladder`, `utility` | Biquad EQ (Audio EQ Cookbook), shelving filters, Moog ladder (ZDF), utility filters |
+| [virtual_analog/](src/python/virtual_analog/) | `filters`, `distortion`, `gate` | VA filter emulations, waveshaping distortion, lowpass gate (vactrol) |
+| [adaptive/](src/python/adaptive/) | `lms`, `nlms` | LMS and NLMS adaptive filters |
+| [delay/](src/python/delay/) | `line`, `comb` | Delay line, comb filter |
+| [mixing/](src/python/mixing/) | `blend`, `level` | Signal blending, level/gain utilities |
+| [modulator/](src/python/modulator/) | `amplitude`, `pitch` | AM, pitch modulation |
+| [nonlinear/](src/python/nonlinear/) | `clipping`, `shaping` | Hard/soft clipping, waveshaping |
+| [source_filter/](src/python/source_filter/) | `formant`, `lpc` | Formant synthesis, LPC |
+| [source_separation/](src/python/source_separation/) | `hpss`, `wiener` | Harmonic-percussive separation, Wiener filtering |
+| [spatial/](src/python/spatial/) | `stereo`, `precedence` | Stereo panning, precedence effect |
+| [spectral/](src/python/spectral/) | `features`, `processing` | Spectral feature extraction, spectral processing |
+| [time_frequency/](src/python/time_frequency/) | `transform`, `analysis` | STFT/ISTFT, time-frequency analysis |
+| [time_segment/](src/python/time_segment/) | `framing`, `windowing` | Block framing, window functions |
+| [warping/](src/python/warping/) | `resampling`, `stretching` | Sample-rate conversion, time stretching |
+
+### Supporting directories
+
+- [examples/](examples/) — standalone `plot_<module>_<submodule>.py` scripts; not part of the package
+- [tests/](tests/) — pytest tests mirroring the package structure; use FFT-based frequency analysis to verify spectral correctness
+- [docs/](docs/) — per-module subdirectories with DSP theory, coefficient derivation, and frequency response notes
+
+Tests validate shapes, amplitude bounds, and dominant frequency via FFT (`np.fft.rfft`). Follow this pattern when adding tests for new modules.
