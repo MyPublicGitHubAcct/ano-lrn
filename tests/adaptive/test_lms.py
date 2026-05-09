@@ -68,8 +68,9 @@ def test_lms_large_mu_diverges():
     rng = np.random.default_rng(9)
     ref = rng.standard_normal(n)
     des = np.concatenate([np.zeros(3), ref[:-3]])
-    _, err, _ = lms(des, ref, filter_order=16, mu=10.0)
-    rms_early = _rms(err[:n // 4])
-    rms_late = _rms(err[3 * n // 4:])
+    with np.errstate(over="ignore"):
+        _, err, _ = lms(des, ref, filter_order=16, mu=10.0)
+        rms_early = _rms(err[:n // 4])
+        rms_late = _rms(err[3 * n // 4:])
     assert rms_late > rms_early or not np.all(np.isfinite(err))
 

@@ -97,7 +97,7 @@ Add `pluck(freq, fs, duration, damping, pickup)` to a new `src/python/physical/s
 
 ### Add chorus and flanger effects
 
-Add `chorus(signal, fs, rate, depth, mix)` and `flanger(signal, fs, rate, depth, feedback, mix)` to `src/python/delay/modulated.py`. Both use a sinusoidally modulated delay line — flanger in the 0.5–5 ms range (comb-filter notches that sweep through the spectrum) and chorus in the 10–30 ms range (pitch detuning that thickens the sound). The modulated read position requires sub-sample interpolation; use the same Lagrange approach planned for `fractional_delay_line` (see that TODO). Flanger adds a `feedback` path from output back into the delay buffer, deepening the notches. Add tests verifying the comb-filter notch frequency matches the instantaneous delay at a static modulation position, and that chorus output RMS is within 3 dB of input. This TODO depends on "Add fractional delay line" being completed first.
+Add `chorus(signal, fs, rate, depth, mix)` and `flanger(signal, fs, rate, depth, feedback, mix)` to `src/python/delay/modulated.py`. Both use a sinusoidally modulated delay line — flanger in the 0.5–5 ms range (comb-filter notches that sweep through the spectrum) and chorus in the 10–30 ms range (pitch detuning that thickens the sound). The modulated read position requires sub-sample interpolation via `fractional_delay_line`. Flanger adds a `feedback` path from output back into the delay buffer, deepening the notches. Add tests verifying the comb-filter notch frequency matches the instantaneous delay at a static modulation position, and that chorus output RMS is within 3 dB of input.
 
 ### Add ping-pong delay
 

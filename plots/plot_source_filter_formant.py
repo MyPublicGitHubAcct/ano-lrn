@@ -13,10 +13,12 @@ _, impulse = generate_impulse(fs=FS, duration=DURATION)
 
 VOWELS = {
     "/a/": {"freqs": [800.0, 1200.0, 2500.0], "bws": [100.0, 100.0, 120.0]},
+    "/e/": {"freqs": [600.0, 1800.0, 2700.0], "bws": [90.0, 100.0, 120.0]},
     "/i/": {"freqs": [300.0, 2200.0, 3000.0], "bws": [80.0, 90.0, 120.0]},
+    "/o/": {"freqs": [600.0, 900.0, 2500.0], "bws": [90.0, 100.0, 120.0]},
     "/u/": {"freqs": [300.0, 800.0, 2300.0], "bws": [80.0, 100.0, 120.0]},
 }
-COLORS = ["steelblue", "darkorange", "mediumseagreen"]
+COLORS = ["steelblue", "darkorange", "mediumseagreen", "mediumpurple", "indianred"]
 
 freqs_axis = np.fft.rfftfreq(len(impulse), d=1.0 / FS)
 
@@ -25,9 +27,11 @@ def _db(s: np.ndarray) -> np.ndarray:
     return 20 * np.log10(np.abs(np.fft.rfft(s)) + 1e-12)
 
 
-fig, axes = plt.subplots(1, 3, figsize=(14, 5))
+fig, axes = plt.subplots(2, 3, figsize=(14, 9))
+axes_flat = axes.flatten()
+axes_flat[-1].set_visible(False)
 
-for ax, (vowel, params), color in zip(axes, VOWELS.items(), COLORS):
+for ax, (vowel, params), color in zip(axes_flat, VOWELS.items(), COLORS):
     h = formant_filter(impulse, formant_freqs=params["freqs"], bandwidths=params["bws"], fs=FS)
     db = _db(h)
     mask = freqs_axis > 0

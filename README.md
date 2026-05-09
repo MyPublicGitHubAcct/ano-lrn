@@ -196,3 +196,9 @@ uv run pytest
 ```sh
 uv run python plots/<script>.py
 ```
+
+## Running Notebooks
+
+```sh
+uv run jupyter notebook notebooks/<notebook>.ipynb
+```

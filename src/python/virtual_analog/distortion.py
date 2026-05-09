@@ -8,6 +8,8 @@ def diode_clip(signal: np.ndarray, threshold: float = 0.7) -> np.ndarray:
     Negative half: soft clipped via tanh (models a forward-biased diode
     that turns on gradually).
     """
+    if threshold == 0.0:
+        return np.zeros(len(signal), dtype=float)
     out = signal.copy().astype(float)
     out = np.where(out > threshold, threshold, out)
     neg = out < 0
