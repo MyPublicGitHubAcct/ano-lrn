@@ -37,7 +37,7 @@ Each top-level module under `src/python/` is a package with submodules. The `__i
 | [filters/](src/python/filters/) | `eq`, `shelving`, `ladder`, `utility` | Biquad EQ (Audio EQ Cookbook), shelving filters, Moog ladder (ZDF), utility filters |
 | [virtual_analog/](src/python/virtual_analog/) | `filters`, `distortion`, `gate` | VA filter emulations, waveshaping distortion, lowpass gate (vactrol) |
 | [adaptive/](src/python/adaptive/) | `lms`, `nlms` | LMS and NLMS adaptive filters |
-| [delay/](src/python/delay/) | `line`, `comb` | Delay line, comb filter |
+| [delay/](src/python/delay/) | `line`, `comb`, `modulated` | Delay line, comb filter, chorus and flanger |
 | [mixing/](src/python/mixing/) | `blend`, `level` | Signal blending, level/gain utilities |
 | [modulator/](src/python/modulator/) | `amplitude`, `pitch` | AM, pitch modulation |
 | [nonlinear/](src/python/nonlinear/) | `clipping`, `shaping` | Hard/soft clipping, waveshaping |
