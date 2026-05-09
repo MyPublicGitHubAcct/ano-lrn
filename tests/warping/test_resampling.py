@@ -41,3 +41,25 @@ def test_resample_identity_same_rate():
     out = resample(sig, 44100, 44100)
     np.testing.assert_allclose(out, sig, atol=1e-10)
 
+
+def test_resample_single_sample_no_crash():
+    """Resampling a 1-sample signal must not raise an error or produce NaN."""
+    sig = np.array([0.5])
+    out = resample(sig, orig_fs=44100, target_fs=22050)
+    assert np.all(np.isfinite(out))
+
+
+def test_resample_non_integer_ratio_length_and_frequency():
+    """44100 → 48000 Hz: output length must equal round(N × 48000/44100) and dominant freq must be preserved."""
+    orig_fs, target_fs = 44100, 48000
+    freq = 1000.0
+    n = 44100
+    sig = np.sin(2 * np.pi * freq * np.arange(n) / orig_fs)
+    out = resample(sig, orig_fs=orig_fs, target_fs=target_fs)
+    expected_len = round(n * target_fs / orig_fs)
+    assert abs(len(out) - expected_len) <= 1
+    spectrum = np.abs(np.fft.rfft(out))
+    freqs_ax = np.fft.rfftfreq(len(out), d=1.0 / target_fs)
+    dominant = float(freqs_ax[np.argmax(spectrum)])
+    assert abs(dominant - freq) < 50.0
+

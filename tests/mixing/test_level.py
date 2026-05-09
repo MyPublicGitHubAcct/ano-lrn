@@ -72,3 +72,18 @@ def test_normalize_0db_peak():
     out = normalize(sig, target_db=0.0)
     assert np.max(np.abs(out)) == pytest.approx(1.0, rel=1e-4)
 
+
+def test_normalize_twice_is_idempotent():
+    """Applying normalize twice must return the same result as applying it once."""
+    sig = _sine() * 0.3
+    out1 = normalize(sig, target_db=-6.0)
+    out2 = normalize(out1, target_db=-6.0)
+    np.testing.assert_allclose(out1, out2, atol=1e-12)
+
+
+def test_gain_silent_signal_returns_zeros():
+    """gain applied to an all-zero signal must return all zeros (no NaN from 0 × 10^(g/20))."""
+    sig = np.zeros(100)
+    out = gain(sig, 12.0)
+    np.testing.assert_array_equal(out, np.zeros(100))
+

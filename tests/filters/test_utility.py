@@ -48,3 +48,20 @@ def test_dc_block_minus3db_at_cutoff():
     out = dc_block(sig, cutoff=cutoff, fs=FS)
     assert _steady_rms(out) / _steady_rms(sig) == pytest.approx(1.0 / np.sqrt(2), abs=0.02)
 
+
+def test_dc_block_near_zero_cutoff_passes_audio_band():
+    """A dc_block with a very low cutoff (1 Hz) must not attenuate audio-band content."""
+    sig = _sine(1000.0)
+    out = dc_block(sig, cutoff=1.0, fs=FS)
+    assert _steady_rms(out) / _steady_rms(sig) > 0.99
+
+
+def test_dc_block_two_cascades_stable():
+    """Two cascaded dc_block calls must not cause instability; audio-band RMS must remain comparable to one pass."""
+    sig = _sine(1000.0)
+    out1 = dc_block(sig, cutoff=20.0, fs=FS)
+    out2 = dc_block(out1, cutoff=20.0, fs=FS)
+    assert np.all(np.isfinite(out2))
+    # Second pass should not more than halve the RMS (< 6 dB extra attenuation at 1 kHz)
+    assert _steady_rms(out2) / _steady_rms(out1) > 0.5
+

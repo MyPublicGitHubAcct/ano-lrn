@@ -57,3 +57,29 @@ def test_lpc_synthesize_output_dtype_float():
     out = lpc_synthesize(_impulse(len(sig)), coeffs)
     assert out.dtype == float
 
+
+def test_lpc_round_trip_preserves_dominant_frequency():
+    """lpc_synthesize driven by an impulse must produce a signal whose dominant frequency matches the original."""
+    freq = 440.0
+    n = 4096
+    sig = _sine(freq=freq, n=n)
+    coeffs = lpc_coeffs(sig, order=12)
+    out = lpc_synthesize(_impulse(n), coeffs)
+    spectrum = np.abs(np.fft.rfft(out))
+    freqs_axis = np.fft.rfftfreq(n, d=1.0 / FS)
+    dominant = float(freqs_axis[np.argmax(spectrum)])
+    assert abs(dominant - freq) < 20.0
+
+
+def test_lpc_order_one_is_single_sample_prediction():
+    """order=1 produces a first-order AR model; the single coefficient predicts each sample from the previous."""
+    freq = 500.0
+    n = 2048
+    sig = np.sin(2 * np.pi * freq * np.arange(n) / FS)
+    coeffs = lpc_coeffs(sig, order=1)
+    assert len(coeffs) == 1
+    # The first-order predictor: predicted[i] = coeffs[0] * sig[i-1]
+    predicted = coeffs[0] * sig[5]
+    error = abs(predicted - sig[6])
+    assert error < 0.2
+

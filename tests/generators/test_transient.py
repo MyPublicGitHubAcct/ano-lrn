@@ -54,3 +54,16 @@ def test_step_amplitude(amplitude):
     _, w = generate_step(onset=0.0, amplitude=amplitude)
     assert np.all(w == pytest.approx(amplitude))
 
+
+def test_step_onset_zero_amplitude_zero_is_silent():
+    """onset=0 and amplitude=0 together must produce an all-zero output."""
+    _, w = generate_step(onset=0.0, amplitude=0.0)
+    np.testing.assert_array_equal(w, np.zeros(N))
+
+
+def test_impulse_delay_at_or_beyond_duration_is_all_zero():
+    """An impulse at delay >= duration falls outside the buffer; the output must be all-zero."""
+    duration = 1.0
+    _, w = generate_impulse(delay=duration, fs=FS, duration=duration)
+    np.testing.assert_array_equal(w, np.zeros(int(FS * duration)))
+

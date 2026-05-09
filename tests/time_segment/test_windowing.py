@@ -43,3 +43,21 @@ def test_apply_window_unknown_raises():
     with pytest.raises(ValueError):
         apply_window(np.ones(64), "unknown_window")
 
+
+def test_apply_window_hamming_endpoints_near_0_08():
+    """The Hamming window has endpoints ≈ 0.08 (not zero), distinguishing it from the Hann window."""
+    sig = np.ones(1024)
+    out = apply_window(sig, "hamming")
+    # np.hamming endpoints are 0.08 exactly
+    assert out[0] == pytest.approx(0.08, abs=0.01)
+    assert out[-1] == pytest.approx(0.08, abs=0.01)
+
+
+def test_all_supported_windows_within_unit_range():
+    """Every supported window type must produce output within [−1, +1] for a unit-amplitude input."""
+    sig = np.ones(1024)
+    for window_type in ["hann", "hamming", "blackman", "rectangular"]:
+        out = apply_window(sig, window_type)
+        assert np.max(out) <= 1.0 + 1e-9
+        assert np.min(out) >= -1.0 - 1e-9
+

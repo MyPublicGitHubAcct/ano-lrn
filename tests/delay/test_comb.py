@@ -61,3 +61,25 @@ def test_comb_filter_zero_gain_is_identity():
     sig = _sine()
     np.testing.assert_allclose(comb_filter(sig, 50, gain=0.0), sig, atol=1e-12)
 
+
+def test_feedback_delay_negative_feedback_alternates_sign():
+    """Negative feedback must produce echoes with alternating polarity at each delay interval."""
+    sig = _impulse(2048)
+    d = 100
+    fb = -0.5
+    out = feedback_delay(sig, d, feedback=fb)
+    assert abs(out[0]) == pytest.approx(1.0, abs=1e-6)
+    assert out[d] == pytest.approx(fb, abs=1e-6)       # -0.5
+    assert out[2 * d] == pytest.approx(fb ** 2, abs=1e-6)  # +0.25
+    assert out[3 * d] == pytest.approx(fb ** 3, abs=1e-6)  # -0.125
+
+
+def test_feedback_delay_above_unity_feedback_grows():
+    """feedback > 1 makes the IIR unstable; later echoes must exceed the initial impulse amplitude."""
+    sig = _impulse(2048)
+    d = 50
+    out = feedback_delay(sig, d, feedback=1.5)
+    # With feedback=1.5 each echo is 1.5× the previous: out[d] > out[0], out[2d] > out[d], etc.
+    assert abs(out[d]) > abs(out[0])
+    assert abs(out[2 * d]) > abs(out[d])
+

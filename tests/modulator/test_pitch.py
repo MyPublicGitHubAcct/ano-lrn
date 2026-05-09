@@ -22,3 +22,20 @@ def test_vibrato_output_bounded():
     out = vibrato(sig, rate=5.0, depth_samples=3.0, fs=FS)
     assert np.max(np.abs(out)) <= 1.05
 
+
+def test_vibrato_depth_zero_produces_constant_delay():
+    """With depth_samples=0, the delay is a fixed 1-sample offset; output must be finite and same length as input."""
+    sig = _sine(n=1024)
+    out = vibrato(sig, rate=5.0, depth_samples=0, fs=FS)
+    assert out.shape == sig.shape
+    assert np.all(np.isfinite(out))
+
+
+def test_vibrato_large_depth_no_crash():
+    """Very large depth_samples must not cause IndexError or NaN (should remain bounded)."""
+    n = 4096
+    sig = _sine(n=n)
+    out = vibrato(sig, rate=1.0, depth_samples=n // 4, fs=FS)
+    assert out.shape == sig.shape
+    assert np.all(np.isfinite(out))
+

@@ -75,3 +75,14 @@ def test_stereo_widen_width_1_is_identity():
     np.testing.assert_allclose(out_L, L, atol=1e-12)
     np.testing.assert_allclose(out_R, R, atol=1e-12)
 
+
+def test_stereo_widen_width_greater_than_one_increases_side():
+    """width > 1 must increase the side (L − R) signal RMS compared to unprocessed stereo."""
+    L = _sine(440.0)
+    R = _sine(880.0)
+    side_original = float(np.sqrt(np.mean((L - R) ** 2)))
+    _, out_R = stereo_widen(L, R, width=2.0)
+    out_L, _ = stereo_widen(L, R, width=2.0)
+    side_widened = float(np.sqrt(np.mean((out_L - out_R) ** 2)))
+    assert side_widened > side_original
+

@@ -90,3 +90,21 @@ def test_periodic_freq_near_nyquist_is_finite(periodic_gen):
     _, w = periodic_gen(freq=FS * 0.49)
     assert np.all(np.isfinite(w))
 
+
+def test_sawtooth_rises_monotonically_within_cycle():
+    """Within each cycle (away from the reset boundary) the sawtooth must increase sample-by-sample."""
+    from python.generators import generate_sawtooth
+    freq = 100.0
+    _, w = generate_sawtooth(freq=freq, fs=FS)
+    samples_per_cycle = int(FS / freq)
+    # Check a window in the middle of the first cycle, well away from the reset discontinuity
+    mid_start = samples_per_cycle // 4
+    mid_end = 3 * samples_per_cycle // 4
+    assert np.all(np.diff(w[mid_start:mid_end]) > 0)
+
+
+def test_sine_zero_freq_is_constant():
+    """At freq=0 the phase never advances; every sample must equal amplitude·sin(phase)."""
+    _, w = generate_sine(freq=0.0)
+    assert np.all(w == pytest.approx(w[0]))
+

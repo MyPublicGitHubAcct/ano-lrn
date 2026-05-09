@@ -3,7 +3,7 @@ import pytest
 
 from python.filters import moog_ladder
 
-from tests.filters.conftest import FS, _dc, _sine, _steady_rms
+from tests.filters.conftest import FS, DURATION, _dc, _sine, _steady_rms
 
 
 def test_moog_ladder_output_shape():
@@ -73,4 +73,31 @@ def test_moog_ladder_cutoff_at_20hz_blocks_signal():
     sig = _sine(440.0)
     out = moog_ladder(sig, cutoff=20.0, fs=FS, resonance=0.0)
     assert _steady_rms(out) / _steady_rms(sig) < 0.1
+
+
+def test_moog_ladder_four_pole_rolloff_slope_one_to_two_octaves():
+    """Between 1× and 2× cutoff the 4-pole ladder must roll off between −14 and −27 dB/octave."""
+    N = 131072
+    imp = np.zeros(N)
+    imp[0] = 1.0
+    cutoff = 500.0
+    h = moog_ladder(imp, cutoff=cutoff, fs=FS, resonance=0.0)
+    freqs = np.fft.rfftfreq(N, d=1.0 / FS)
+    mag_db = 20.0 * np.log10(np.abs(np.fft.rfft(h)) + 1e-12)
+    idx_1x = np.argmin(np.abs(freqs - cutoff))
+    idx_2x = np.argmin(np.abs(freqs - 2 * cutoff))
+    slope = mag_db[idx_2x] - mag_db[idx_1x]
+    assert -27.0 < slope < -14.0
+
+
+def test_moog_ladder_resonance_peak_near_cutoff():
+    """With resonance enabled, the impulse-response FFT peak must be within 10% of the cutoff frequency."""
+    from python.generators import generate_impulse
+    _, imp = generate_impulse(fs=FS, duration=DURATION)
+    cutoff = 1000.0
+    h = moog_ladder(imp, cutoff=cutoff, fs=FS, resonance=0.7)
+    freqs = np.fft.rfftfreq(len(h), d=1.0 / FS)
+    mag = np.abs(np.fft.rfft(h))
+    peak_freq = freqs[np.argmax(mag)]
+    assert abs(peak_freq - cutoff) / cutoff < 0.10
 

@@ -43,3 +43,33 @@ def test_lms_identity_system_converges():
     out, err, w = lms(ref, ref, filter_order=16, mu=0.01)
     assert _rms(err[3 * n // 4:]) < 0.1
 
+
+def test_lms_output_equals_desired_minus_error():
+    """LMS identity: output = desired − error must hold sample-by-sample by construction."""
+    n = 2048
+    ref = np.random.default_rng(5).standard_normal(n)
+    des = np.random.default_rng(6).standard_normal(n)
+    out, err, _ = lms(des, ref, filter_order=16, mu=0.01)
+    np.testing.assert_allclose(out, des - err, atol=1e-12)
+
+
+def test_lms_mu_zero_weights_stay_zero():
+    """With mu=0 the update term vanishes; all weights must remain zero throughout."""
+    n = 2048
+    ref = np.random.default_rng(7).standard_normal(n)
+    des = np.random.default_rng(8).standard_normal(n)
+    _, _, w = lms(des, ref, filter_order=16, mu=0.0)
+    np.testing.assert_array_equal(w, np.zeros(16))
+
+
+def test_lms_large_mu_diverges():
+    """A very large step size violates the stability bound; error must grow rather than shrink."""
+    n = 2048
+    rng = np.random.default_rng(9)
+    ref = rng.standard_normal(n)
+    des = np.concatenate([np.zeros(3), ref[:-3]])
+    _, err, _ = lms(des, ref, filter_order=16, mu=10.0)
+    rms_early = _rms(err[:n // 4])
+    rms_late = _rms(err[3 * n // 4:])
+    assert rms_late > rms_early or not np.all(np.isfinite(err))
+

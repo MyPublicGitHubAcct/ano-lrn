@@ -248,3 +248,33 @@ def test_lowpass_high_Q_resonates_at_cutoff():
     out_high_Q = lowpass(sig, cutoff=1000.0, fs=FS, Q=10.0)
     assert _steady_rms(out_high_Q) > _steady_rms(out_low_Q)
 
+
+def test_lowpass_minus3db_at_cutoff():
+    """Impulse-response FFT must show −3 dB gain (within 5% of cutoff) at the nominal cutoff frequency."""
+    cutoff = 1000.0
+    _, imp = generate_impulse(fs=FS, duration=DURATION)
+    h = lowpass(imp, cutoff=cutoff, fs=FS)
+    freqs = np.fft.rfftfreq(len(h), d=1.0 / FS)
+    mag = np.abs(np.fft.rfft(h))
+    dc_gain = mag[0]
+    idx_cutoff = np.argmin(np.abs(freqs - cutoff))
+    gain_at_cutoff = mag[idx_cutoff] / dc_gain
+    assert gain_at_cutoff == pytest.approx(1.0 / np.sqrt(2), abs=0.08)
+
+
+def test_bandpass_bandwidth_equals_cutoff_over_Q():
+    """The −3 dB bandwidth of a bandpass must equal cutoff/Q (Audio EQ Cookbook relation)."""
+    cutoff = 1000.0
+    Q = 4.0
+    expected_bw = cutoff / Q  # 250 Hz
+    _, imp = generate_impulse(fs=FS, duration=DURATION)
+    h = bandpass(imp, cutoff=cutoff, fs=FS, Q=Q)
+    freqs = np.fft.rfftfreq(len(h), d=1.0 / FS)
+    mag = np.abs(np.fft.rfft(h))
+    peak_gain = np.max(mag)
+    threshold = peak_gain / np.sqrt(2)
+    above = freqs[mag >= threshold]
+    if len(above) >= 2:
+        measured_bw = above[-1] - above[0]
+        assert abs(measured_bw - expected_bw) / expected_bw < 0.2
+

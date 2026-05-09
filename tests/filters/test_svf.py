@@ -173,3 +173,30 @@ def test_svf_cutoff_at_20hz_blocks_signal():
     out = svf(sig, cutoff=20.0, fs=FS, resonance=0.0, mode="lp")
     assert _steady_rms(out) / _steady_rms(sig) < 0.1
 
+
+def test_svf_lp_minus3db_within_10pct_of_cutoff():
+    """Chamberlin LP −3 dB point must be within 10% of the cutoff frequency."""
+    imp = _impulse()
+    lp = svf(imp, cutoff=CUTOFF, fs=FS, resonance=0.0, mode="lp")
+    freqs = np.fft.rfftfreq(len(lp), d=1.0 / FS)
+    mag = np.abs(np.fft.rfft(lp))
+    dc_gain = mag[0]
+    threshold = dc_gain / np.sqrt(2)
+    # Find the first frequency where magnitude drops below -3 dB
+    above = np.where(mag >= threshold)[0]
+    if len(above) > 0:
+        f_3db = float(freqs[above[-1]])
+        assert abs(f_3db - CUTOFF) / CUTOFF < 0.10
+
+
+def test_svf_lp_bp_hp_sum_equals_input():
+    """Chamberlin identity: lp[i] + q*bp[i-1] + hp[i] == x[i] (bp uses the previous sample's value)."""
+    resonance = 0.5
+    q = np.sqrt(2.0) * (1.0 - resonance)
+    sig = _sine(440.0)
+    lp, bp, hp = svf(sig, cutoff=CUTOFF, fs=FS, resonance=resonance, mode="all")
+    # The Chamberlin loop uses the OLD bp when computing hp; bp_buf[i-1] is the old value at step i
+    bp_old = np.concatenate([[0.0], bp[:-1]])
+    reconstructed = lp + q * bp_old + hp
+    np.testing.assert_allclose(reconstructed, sig, atol=1e-10)
+

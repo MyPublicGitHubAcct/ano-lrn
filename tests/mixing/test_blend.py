@@ -67,3 +67,21 @@ def test_crossfade_midpoint():
     out = crossfade(a, b, 0.5)
     np.testing.assert_allclose(out, np.full(100, 0.5), atol=1e-12)
 
+
+def test_mix_all_zero_weights_returns_zero():
+    """Mixing with all-zero weights must return an all-zero array."""
+    a = _sine(440.0)
+    b = _sine(880.0)
+    out = mix([a, b], weights=[0.0, 0.0])
+    np.testing.assert_array_equal(out, np.zeros_like(a))
+
+
+def test_crossfade_linearity_at_intermediate_position():
+    """crossfade at any position p must equal (1−p)·a + p·b for non-constant signals."""
+    a = _sine(440.0)
+    b = _sine(880.0)
+    for pos in [0.25, 0.5, 0.75]:
+        out = crossfade(a, b, pos)
+        expected = (1 - pos) * a + pos * b
+        np.testing.assert_allclose(out, expected, atol=1e-12)
+

@@ -105,3 +105,25 @@ def test_highshelf_large_cut_lowers_level():
     out = highshelf(sig, cutoff=1000.0, fs=FS, gain_db=-18.0)
     assert _steady_rms(out) / _steady_rms(sig) == pytest.approx(expected, rel=0.01)
 
+
+def test_lowshelf_gain_at_cutoff_is_half_shelf_gain():
+    """At the shelf cutoff the gain must be approximately gain_db/2 (the −3 dB midpoint of the shelf slope)."""
+    from python.generators import generate_impulse
+    gain_db = 12.0
+    cutoff = 1000.0
+    _, imp = generate_impulse(fs=FS, duration=1.0)
+    h = lowshelf(imp, cutoff=cutoff, fs=FS, gain_db=gain_db)
+    freqs = np.fft.rfftfreq(len(h), d=1.0 / FS)
+    mag_db = 20.0 * np.log10(np.abs(np.fft.rfft(h)) + 1e-12)
+    idx_cutoff = np.argmin(np.abs(freqs - cutoff))
+    gain_at_cutoff_db = mag_db[idx_cutoff]
+    assert gain_at_cutoff_db == pytest.approx(gain_db / 2, abs=3.0)
+
+
+def test_lowshelf_does_not_affect_two_octaves_above_cutoff():
+    """A frequency more than 1 octave above the lowshelf cutoff must pass with gain ≈ 0 dB (≤ 1 dB boost)."""
+    sig = _sine(4000.0)  # 2 octaves above 1000 Hz
+    out = lowshelf(sig, cutoff=1000.0, fs=FS, gain_db=12.0)
+    ratio = _steady_rms(out) / _steady_rms(sig)
+    assert ratio == pytest.approx(1.0, abs=0.12)  # ≤ ≈1 dB (12% amplitude)
+

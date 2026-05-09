@@ -61,3 +61,30 @@ def test_spectral_flux_noise_higher_than_sine():
     f_noise = np.mean(spectral_flux(rng.standard_normal(n), FRAME, HOP)[1:])
     assert f_noise > f_sine
 
+
+def test_spectral_centroid_pure_sine_matches_frequency():
+    """spectral_centroid of a pure sine at f must return values close to f (within one FFT bin) in steady state."""
+    freq = 1000.0
+    n = 4096
+    sig = _sine(freq=freq, n=n)
+    centroids = spectral_centroid(sig, FS, FRAME, HOP)
+    bin_width = FS / FRAME
+    # Skip early frames (onset transient) and check steady-state frames
+    steady = centroids[2:]
+    assert np.all(np.abs(steady - freq) < bin_width * 2)
+
+
+def test_spectral_flux_spikes_at_onset():
+    """spectral_flux must show a peak at the onset (silence → tone); the onset frame must exceed the steady-state mean."""
+    n = 4096
+    # First half silence, second half sine
+    sig = np.zeros(n)
+    sig[n // 2:] = _sine(freq=440.0, n=n // 2)
+    flux = spectral_flux(sig, FRAME, HOP)
+    # Find the onset frame (around midpoint sample n//2 / HOP)
+    onset_frame = (n // 2) // HOP
+    if onset_frame < len(flux):
+        window = flux[max(0, onset_frame - 2): onset_frame + 3]
+        steady = flux[onset_frame + 5:] if onset_frame + 5 < len(flux) else flux[-3:]
+        assert np.max(window) > np.mean(steady) * 2
+

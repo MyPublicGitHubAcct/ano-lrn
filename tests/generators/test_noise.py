@@ -47,3 +47,20 @@ def test_noise_amplitude_zero_is_silent(seeded_gen):
     _, w = seeded_gen(amplitude=0.0, seed=0)
     np.testing.assert_array_equal(w, np.zeros(N))
 
+
+def test_white_noise_flat_power_spectral_density():
+    """White noise power must be approximately equal across octave bands (within 6 dB of each other)."""
+    from python.generators import generate_white_noise
+    _, w = generate_white_noise(fs=FS, duration=4.0, amplitude=1.0, seed=42)
+    spectrum = np.abs(np.fft.rfft(w)) ** 2
+    freqs = np.fft.rfftfreq(len(w), d=1.0 / FS)
+    bands = [(100, 200), (200, 400), (400, 800), (800, 1600), (1600, 3200), (3200, 6400)]
+    powers = []
+    for lo, hi in bands:
+        mask = (freqs >= lo) & (freqs < hi)
+        n_bins = np.sum(mask)
+        powers.append(np.sum(spectrum[mask]) / n_bins if n_bins > 0 else 0.0)
+    powers_arr = np.array(powers)
+    # All octave bands within 6 dB (factor of 4 in power) of each other
+    assert np.max(powers_arr) / np.min(powers_arr) < 4.0
+

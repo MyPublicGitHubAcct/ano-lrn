@@ -48,3 +48,20 @@ def test_hpss_masks_sum_to_unity():
     original_rms = _rms(sig)
     assert abs(combined_rms - original_rms) < 0.1 * original_rms
 
+
+def test_hpss_pure_sine_classified_as_harmonic():
+    """A pure sine is maximally harmonic; the harmonic component must contain far more energy than percussive."""
+    sig = _sine(freq=440.0, n=4096)
+    h, p = hpss(sig, fs=FS, frame_size=FRAME, hop_size=HOP, kernel_size=17)
+    assert _rms(h) > _rms(p) * 3
+
+
+def test_hpss_larger_kernel_increases_harmonic_contrast():
+    """A larger kernel_size sharpens separation; harmonic/percussive contrast must be greater with a larger kernel."""
+    sig = _sine(freq=440.0, n=4096)
+    h_small, p_small = hpss(sig, fs=FS, frame_size=FRAME, hop_size=HOP, kernel_size=5)
+    h_large, p_large = hpss(sig, fs=FS, frame_size=FRAME, hop_size=HOP, kernel_size=31)
+    ratio_small = _rms(h_small) / (_rms(p_small) + 1e-12)
+    ratio_large = _rms(h_large) / (_rms(p_large) + 1e-12)
+    assert ratio_large > ratio_small
+

@@ -115,3 +115,29 @@ def test_lowpass_gate_output_finite():
     out = lowpass_gate(sig, ctrl, fs=FS)
     assert np.all(np.isfinite(out))
 
+
+def test_lowpass_gate_mode_both_more_attenuated_than_amplitude_at_high_freq():
+    """mode='both' applies filter+VCA; high-frequency output must be more attenuated than amplitude-only mode."""
+    freq = 5000.0
+    n = FS
+    sig = np.sin(2 * np.pi * freq * np.arange(n) / FS)
+    ctrl = np.ones(n) * 0.5  # half-open gate, low cutoff
+    out_both = lowpass_gate(sig, ctrl, fs=FS, mode="both", max_cutoff=4000.0)
+    out_amp = lowpass_gate(sig, ctrl, fs=FS, mode="amplitude")
+    rms_both = float(np.sqrt(np.mean(out_both[n // 2:] ** 2)))
+    rms_amp = float(np.sqrt(np.mean(out_amp[n // 2:] ** 2)))
+    assert rms_both < rms_amp
+
+
+def test_lowpass_gate_attack_time_constant_respected():
+    """After a step open, output must reach ~63% of steady-state within one attack_time (one RC time constant)."""
+    attack_time = 0.050  # 50 ms
+    n = int(FS * 1.0)
+    sig = np.ones(n)
+    ctrl = np.ones(n)  # gate opens immediately
+    out = lowpass_gate(sig, ctrl, fs=FS, mode="amplitude",
+                       attack_time=attack_time, release_time=1.0)
+    t_one_tau = int(attack_time * FS)
+    # After one time constant, the one-pole smoother reaches 1 - 1/e ≈ 0.632
+    assert 0.45 < out[t_one_tau] < 0.85
+

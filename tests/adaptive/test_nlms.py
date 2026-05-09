@@ -39,3 +39,23 @@ def test_nlms_weights_not_all_zero():
     _, _, w = nlms(des, ref, filter_order=8, mu=0.5)
     assert not np.all(w == 0.0)
 
+
+def test_nlms_mu_zero_weights_stay_zero():
+    """With mu=0 the update term vanishes; all weights must remain zero throughout."""
+    n = 2048
+    ref = np.random.default_rng(10).standard_normal(n)
+    des = np.random.default_rng(11).standard_normal(n)
+    _, _, w = nlms(des, ref, filter_order=16, mu=0.0)
+    np.testing.assert_array_equal(w, np.zeros(16))
+
+
+def test_nlms_silent_reference_no_nan():
+    """When the reference is all zeros, epsilon prevents division by zero; output must be finite."""
+    n = 2048
+    ref = np.zeros(n)
+    des = np.random.default_rng(12).standard_normal(n)
+    out, err, w = nlms(des, ref, filter_order=16, mu=0.5, eps=1e-8)
+    assert np.all(np.isfinite(out))
+    assert np.all(np.isfinite(err))
+    assert np.all(np.isfinite(w))
+

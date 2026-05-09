@@ -70,3 +70,21 @@ def test_analog_saturate_monotone():
     out = analog_saturate(sig)
     assert np.all(np.diff(out) > 0)
 
+
+def test_analog_saturate_small_signal_gain_near_unity():
+    """For small inputs (|x| ≪ 1) the small-signal gain must be within 1% of unity with drive=1."""
+    sig = np.linspace(-0.1, 0.1, 101)
+    out = analog_saturate(sig, drive=1.0)
+    nonzero = np.abs(sig) > 0.005
+    ratio = out[nonzero] / sig[nonzero]
+    np.testing.assert_allclose(ratio, 1.0, rtol=0.01)
+
+
+def test_diode_clip_threshold_zero_clips_positive_to_zero():
+    """With threshold=0, all positive samples must be clipped to 0 and the output must be finite."""
+    sig = np.array([0.5, 1.0, -0.5, -1.0])
+    out = diode_clip(sig, threshold=0.0)
+    assert out[0] == pytest.approx(0.0, abs=1e-9)
+    assert out[1] == pytest.approx(0.0, abs=1e-9)
+    assert np.all(np.isfinite(out))
+

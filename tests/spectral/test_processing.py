@@ -43,3 +43,32 @@ def test_spectral_gate_high_threshold_attenuates():
     out = spectral_gate(sig, threshold_db=80.0, frame_size=FRAME, hop_size=HOP)
     assert _rms(out) < _rms(sig) * 0.01
 
+
+def test_spectral_gate_preserves_dominant_frequency():
+    """A signal above the threshold must pass with its dominant frequency intact."""
+    freq = 1000.0
+    sig = _sine(freq=freq, n=4096)
+    out = spectral_gate(sig, threshold_db=-60.0, frame_size=FRAME, hop_size=HOP)
+    spectrum = np.abs(np.fft.rfft(out))
+    freqs_ax = np.fft.rfftfreq(len(out), d=1.0 / FS)
+    dominant = float(freqs_ax[np.argmax(spectrum)])
+    assert abs(dominant - freq) < FS / FRAME * 2
+
+
+def test_spectral_gate_suppresses_quiet_noise_passes_loud_tone():
+    """A loud tone at −6 dB plus quiet noise at −40 dB: gate set at −20 dB must pass tone and suppress noise."""
+    n = 4096
+    rng = np.random.default_rng(42)
+    loud_tone = _sine(freq=1000.0, n=n) * 0.5     # −6 dB
+    quiet_noise = rng.standard_normal(n) * 0.01    # ≈ −40 dB
+    mixed = loud_tone + quiet_noise
+    out = spectral_gate(mixed, threshold_db=-20.0, frame_size=FRAME, hop_size=HOP)
+    spectrum_in = np.abs(np.fft.rfft(mixed))
+    spectrum_out = np.abs(np.fft.rfft(out))
+    freqs_ax = np.fft.rfftfreq(n, d=1.0 / FS)
+    # Tone bin should be largely preserved
+    idx_tone = np.argmin(np.abs(freqs_ax - 1000.0))
+    assert spectrum_out[idx_tone] > spectrum_in[idx_tone] * 0.5
+    # Overall RMS should be higher than noise-only level
+    assert _rms(out) > 0.05
+

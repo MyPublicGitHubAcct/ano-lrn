@@ -33,3 +33,10 @@ def test_haas_right_is_delayed():
     np.testing.assert_allclose(R[d:], sig[:len(sig) - d], atol=1e-12)
     np.testing.assert_array_equal(R[:d], np.zeros(d))
 
+
+def test_haas_zero_delay_identical_channels():
+    """delay=0 produces no precedence effect; left and right must be identical."""
+    sig = _sine()
+    L, R = haas(sig, 0)
+    np.testing.assert_array_equal(L, R)
+

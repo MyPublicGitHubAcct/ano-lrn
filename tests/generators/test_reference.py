@@ -63,3 +63,20 @@ def test_multi_tone_contains_expected_frequencies():
         idx = int(np.argmin(np.abs(freq_axis - f)))
         assert spectrum[idx] > 0.3 * peak
 
+
+def test_multi_tone_single_freq_matches_sine():
+    """generate_multi_tone with one frequency must be proportional to generate_sine (same waveform shape)."""
+    from python.generators import generate_sine
+    freq = 440.0
+    _, w_multi = generate_multi_tone(freqs=[freq])
+    _, w_sine = generate_sine(freq=freq)
+    # multi_tone normalises by its own peak; verify same waveform up to that constant scale
+    peak = np.max(np.abs(w_sine)) + 1e-12
+    np.testing.assert_allclose(w_multi, w_sine / peak, atol=1e-9)
+
+
+def test_dc_amplitude_zero_is_silent():
+    """generate_dc with amplitude=0 must return an all-zero signal."""
+    _, w = generate_dc(amplitude=0.0)
+    np.testing.assert_array_equal(w, np.zeros(N))
+

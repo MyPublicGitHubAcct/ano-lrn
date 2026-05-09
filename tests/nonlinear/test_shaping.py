@@ -55,3 +55,28 @@ def test_bitcrush_preserves_zero():
     """Zero must map to zero at any bit depth; any quantisation error at exactly zero indicates an offset bug."""
     np.testing.assert_allclose(bitcrush(np.array([0.0]), bits=8), [0.0])
 
+
+def test_bitcrush_output_within_unit_range():
+    """bitcrush output must stay within [−1, +1] for any input within [−1, +1]."""
+    sig = np.linspace(-1.0, 1.0, 1024)
+    for bits in [2, 4, 8, 16]:
+        out = bitcrush(sig, bits=bits)
+        assert np.max(out) <= 1.0 + 1e-9
+        assert np.min(out) >= -1.0 - 1e-9
+
+
+def test_waveshape_chebyshev_order2_produces_double_frequency():
+    """Chebyshev T2(x) = 2x^2 − 1; applied to a sine at f it produces energy primarily at 2f."""
+    n = 44100
+    freq = 200.0
+    fs = 44100
+    t = np.arange(n) / fs
+    sig = np.sin(2 * np.pi * freq * t)
+    # T2(x) = 2x^2 - 1 → coefficients: [-1, 0, 2]
+    out = waveshape(sig, [-1.0, 0.0, 2.0])
+    spectrum = np.abs(np.fft.rfft(out))
+    freqs = np.fft.rfftfreq(n, d=1.0 / fs)
+    idx_f = np.argmin(np.abs(freqs - freq))
+    idx_2f = np.argmin(np.abs(freqs - 2 * freq))
+    assert spectrum[idx_2f] > spectrum[idx_f] * 2
+
