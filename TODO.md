@@ -174,6 +174,95 @@ The following coverage gaps were identified when documenting the test suite. Eac
 
 ---
 
+### Add notebooks for all source modules
+
+Add a Jupyter notebook for each source file below (a notebook for `filters/svf.py` already exists at `notebooks/svf_filters.ipynb`). Each notebook should mirror the corresponding plot script where one exists, or demonstrate the module's API with annotated cells showing typical use, parameter sweeps, and any relevant visualisations that show off the capabilities of the algorithms.
+
+**`adaptive/`**
+
+- `notebooks/adaptive_lms.ipynb` — `src/python/adaptive/lms.py`
+- `notebooks/adaptive_nlms.ipynb` — `src/python/adaptive/nlms.py`
+
+**`delay/`**
+
+- `notebooks/delay_line.ipynb` — `src/python/delay/line.py`
+- `notebooks/delay_comb.ipynb` — `src/python/delay/comb.py`
+
+**`filters/`**
+
+- `notebooks/filters_helpers.ipynb` — `src/python/filters/_helpers.py`
+- `notebooks/filters_eq.ipynb` — `src/python/filters/eq.py`
+- `notebooks/filters_ladder.ipynb` — `src/python/filters/ladder.py`
+- `notebooks/filters_shelving.ipynb` — `src/python/filters/shelving.py`
+- `notebooks/filters_utility.ipynb` — `src/python/filters/utility.py`
+
+**`generators/`**
+
+- `notebooks/generators_helpers.ipynb` — `src/python/generators/_helpers.py`
+- `notebooks/generators_noise.ipynb` — `src/python/generators/noise.py`
+- `notebooks/generators_periodic.ipynb` — `src/python/generators/periodic.py`
+- `notebooks/generators_reference.ipynb` — `src/python/generators/reference.py`
+- `notebooks/generators_sweep.ipynb` — `src/python/generators/sweep.py`
+- `notebooks/generators_transient.ipynb` — `src/python/generators/transient.py`
+
+**`mixing/`**
+
+- `notebooks/mixing_blend.ipynb` — `src/python/mixing/blend.py`
+- `notebooks/mixing_level.ipynb` — `src/python/mixing/level.py`
+
+**`modulator/`**
+
+- `notebooks/modulator_amplitude.ipynb` — `src/python/modulator/amplitude.py`
+- `notebooks/modulator_pitch.ipynb` — `src/python/modulator/pitch.py`
+
+**`nonlinear/`**
+
+- `notebooks/nonlinear_clipping.ipynb` — `src/python/nonlinear/clipping.py`
+- `notebooks/nonlinear_shaping.ipynb` — `src/python/nonlinear/shaping.py`
+
+**`source_filter/`**
+
+- `notebooks/source_filter_formant.ipynb` — `src/python/source_filter/formant.py`
+- `notebooks/source_filter_lpc.ipynb` — `src/python/source_filter/lpc.py`
+
+**`source_separation/`**
+
+- `notebooks/source_separation_hpss.ipynb` — `src/python/source_separation/hpss.py`
+- `notebooks/source_separation_wiener.ipynb` — `src/python/source_separation/wiener.py`
+
+**`spatial/`**
+
+- `notebooks/spatial_stereo.ipynb` — `src/python/spatial/stereo.py`
+- `notebooks/spatial_precedence.ipynb` — `src/python/spatial/precedence.py`
+
+**`spectral/`**
+
+- `notebooks/spectral_features.ipynb` — `src/python/spectral/features.py`
+- `notebooks/spectral_processing.ipynb` — `src/python/spectral/processing.py`
+
+**`time_frequency/`**
+
+- `notebooks/time_frequency_transform.ipynb` — `src/python/time_frequency/transform.py`
+- `notebooks/time_frequency_analysis.ipynb` — `src/python/time_frequency/analysis.py`
+
+**`time_segment/`**
+
+- `notebooks/time_segment_framing.ipynb` — `src/python/time_segment/framing.py`
+- `notebooks/time_segment_windowing.ipynb` — `src/python/time_segment/windowing.py`
+
+**`virtual_analog/`**
+
+- `notebooks/virtual_analog_filters.ipynb` — `src/python/virtual_analog/filters.py`
+- `notebooks/virtual_analog_distortion.ipynb` — `src/python/virtual_analog/distortion.py`
+- `notebooks/virtual_analog_gate.ipynb` — `src/python/virtual_analog/gate.py`
+
+**`warping/`**
+
+- `notebooks/warping_resampling.ipynb` — `src/python/warping/resampling.py`
+- `notebooks/warping_stretching.ipynb` — `src/python/warping/stretching.py`
+
+---
+
 ### Add Karplus-Strong plucked string synthesis
 
 Add `pluck(freq, fs, duration, damping, pickup)` to a new `src/python/physical/string.py` submodule with a `src/python/physical/__init__.py`. The Karplus-Strong algorithm excites a delay line (length = fs / freq samples) with a burst of white noise, then recirculates the output through a one-pole lowpass (the "loss filter") each cycle: `y[n] = damping * 0.5 * (y[n−D] + y[n−D−1])`. The `pickup` parameter (0–1) selects the read position along the delay line as a fraction of its length, changing the harmonic balance (mid-pickup cuts even harmonics as in a guitar neck vs. bridge pickup). Return a `(t, signal)` tuple following the generator convention. Add tests verifying: dominant frequency is within 2 Hz of the target, signal decays to below −40 dB within `duration`, and `pickup=0.5` has weaker even harmonics than `pickup=0.1`. Add `plot_physical_string.py` and `docs/physical/string.md`. This builds directly on `src/python/delay/line.py` and is one of the most important physical modeling algorithms for VCV Rack.
