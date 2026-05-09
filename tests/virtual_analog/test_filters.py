@@ -15,11 +15,13 @@ def _rms(x):
 
 
 def test_moog_ladder_shape():
+    """Filter must return an array of the same length as the input."""
     sig = _sine()
     assert moog_ladder(sig, cutoff=1000.0, fs=FS).shape == sig.shape
 
 
 def test_moog_attenuates_high_frequencies():
+    """RMS ratio between low-frequency and high-frequency output must exceed 2× (> 6 dB), confirming lowpass behaviour."""
     sig_low = _sine(freq=100.0)
     sig_high = _sine(freq=10000.0)
     out_low = moog_ladder(sig_low, cutoff=1000.0, fs=FS)
@@ -30,6 +32,7 @@ def test_moog_attenuates_high_frequencies():
 
 
 def test_moog_zero_resonance_no_self_oscillation():
+    """With resonance=0 an impulse must produce a finite, decaying response — no self-oscillation."""
     sig = np.zeros(2048)
     sig[0] = 1.0
     out = moog_ladder(sig, cutoff=1000.0, fs=FS, resonance=0.0)
@@ -39,16 +42,19 @@ def test_moog_zero_resonance_no_self_oscillation():
 # --- parameter range tests ---
 
 def test_moog_resonance_near_one_is_finite():
+    """Resonance just below the self-oscillation threshold must not produce NaN or Inf."""
     out = moog_ladder(_sine(freq=440.0), cutoff=1000.0, fs=FS, resonance=0.99)
     assert np.all(np.isfinite(out))
 
 
 def test_moog_cutoff_above_nyquist_is_clamped_and_stable():
+    """Cutoff above Nyquist must be clamped internally; the output must remain finite."""
     out = moog_ladder(_sine(freq=100.0), cutoff=50000.0, fs=FS, resonance=0.0)
     assert np.all(np.isfinite(out))
 
 
 def test_moog_cutoff_very_low_is_clamped_and_stable():
+    """A near-zero cutoff must be clamped; dividing by a very small g coefficient must not blow up."""
     out = moog_ladder(_sine(freq=100.0), cutoff=0.001, fs=FS, resonance=0.0)
     assert np.all(np.isfinite(out))
 

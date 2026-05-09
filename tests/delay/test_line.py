@@ -18,15 +18,18 @@ def _sine(freq=440.0, n=1024):
 
 
 def test_delay_line_shape():
+    """delay_line must return an array of the same length as the input."""
     assert delay_line(_sine(), 100).shape == _sine().shape
 
 
 def test_delay_line_zero_delay_is_identity():
+    """A zero-sample delay must return the signal unmodified — the trivial pass-through case."""
     sig = _sine()
     np.testing.assert_array_equal(delay_line(sig, 0), sig)
 
 
 def test_delay_line_shifts_samples():
+    """An impulse at index 0 must appear at index d after a d-sample delay, confirming the offset is exact."""
     sig = _impulse()
     d = 50
     out = delay_line(sig, d)
@@ -35,7 +38,9 @@ def test_delay_line_shifts_samples():
 
 
 def test_delay_line_fills_zeros_at_start():
+    """The first d samples of the output must be zero (no wrap-around from the end of the signal)."""
     sig = np.ones(100)
     out = delay_line(sig, 10)
     np.testing.assert_array_equal(out[:10], np.zeros(10))
     np.testing.assert_array_equal(out[10:], np.ones(90))
+

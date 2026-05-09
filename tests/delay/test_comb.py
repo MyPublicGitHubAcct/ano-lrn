@@ -18,14 +18,17 @@ def _sine(freq=440.0, n=1024):
 
 
 def test_feedback_delay_shape():
+    """feedback_delay must return an array of the same length as the input."""
     assert feedback_delay(_sine(), 100).shape == _sine().shape
 
 
 def test_comb_filter_shape():
+    """comb_filter must return an array of the same length as the input."""
     assert comb_filter(_sine(), 100).shape == _sine().shape
 
 
 def test_feedback_delay_produces_echoes():
+    """An impulse must produce echoes at integer multiples of the delay; each echo must be attenuated by feedback^n."""
     sig = _impulse(2048)
     d = 100
     fb = 0.5
@@ -37,11 +40,13 @@ def test_feedback_delay_produces_echoes():
 
 
 def test_feedback_delay_zero_feedback_is_identity():
+    """With feedback=0 no echo is added back, so the output must equal the input."""
     sig = _sine()
     np.testing.assert_allclose(feedback_delay(sig, 50, feedback=0.0), sig, atol=1e-12)
 
 
 def test_comb_filter_adds_delayed_copy():
+    """An impulse must appear at index 0 (direct) and at index d (delayed copy scaled by gain); nothing in between."""
     sig = _impulse()
     d = 100
     g = 0.5
@@ -52,5 +57,7 @@ def test_comb_filter_adds_delayed_copy():
 
 
 def test_comb_filter_zero_gain_is_identity():
+    """With gain=0 no delayed copy is mixed in, so the output must equal the input."""
     sig = _sine()
     np.testing.assert_allclose(comb_filter(sig, 50, gain=0.0), sig, atol=1e-12)
+

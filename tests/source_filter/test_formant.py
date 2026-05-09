@@ -12,12 +12,14 @@ def _impulse(n=1024):
 
 
 def test_formant_filter_shape():
+    """formant_filter must return an array of the same length as the input."""
     sig = _impulse()
     out = formant_filter(sig, formant_freqs=[500.0, 1500.0], bandwidths=[80.0, 120.0], fs=FS)
     assert out.shape == sig.shape
 
 
 def test_formant_filter_boosts_formant_frequency():
+    """The spectral region around the formant frequency must have more energy than DC after impuse excitation."""
     sig = _impulse(2048)
     out = formant_filter(sig, formant_freqs=[1000.0], bandwidths=[100.0], fs=FS)
     spectrum = np.abs(np.fft.rfft(out))
@@ -27,3 +29,4 @@ def test_formant_filter_boosts_formant_frequency():
     energy_1k = np.sum(spectrum[mask_1k] ** 2)
     energy_dc = np.sum(spectrum[mask_dc] ** 2)
     assert energy_1k > energy_dc
+

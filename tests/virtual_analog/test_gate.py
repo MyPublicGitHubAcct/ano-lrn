@@ -18,12 +18,14 @@ def _gate(n, open_frac=0.5):
 
 
 def test_lowpass_gate_shape():
+    """Gate must return an array of the same length as the input signal."""
     sig = _sine()
     ctrl = _gate(len(sig))
     assert lowpass_gate(sig, ctrl, fs=FS).shape == sig.shape
 
 
 def test_lowpass_gate_control_length_mismatch_raises():
+    """Mismatched signal and control lengths must raise ValueError to prevent silent sample misalignment."""
     sig = _sine(n=1024)
     ctrl = np.ones(512)
     with pytest.raises(ValueError):
@@ -31,6 +33,7 @@ def test_lowpass_gate_control_length_mismatch_raises():
 
 
 def test_lowpass_gate_closed_gate_near_silence():
+    """A permanently closed control (all zeros) must suppress the output to near silence."""
     sig = _sine(n=8192)
     ctrl = np.zeros(len(sig))
     out = lowpass_gate(sig, ctrl, fs=FS)
@@ -39,6 +42,7 @@ def test_lowpass_gate_closed_gate_near_silence():
 
 
 def test_lowpass_gate_open_gate_passes_signal():
+    """A permanently open gate must pass the signal with no more than −6 dB attenuation."""
     sig = _sine(n=8192)
     ctrl = np.ones(len(sig))
     out = lowpass_gate(sig, ctrl, fs=FS, mode="both")
@@ -61,7 +65,7 @@ def test_lowpass_gate_attenuates_on_release():
 
 
 def test_lowpass_gate_mode_amplitude_no_filter():
-    """Amplitude-only mode: a high-frequency sine should pass at full level."""
+    """Amplitude-only mode applies VCA envelope but no frequency filtering; high-frequency content must pass."""
     freq = 10000.0
     n = 8192
     sig = np.sin(2 * np.pi * freq * np.arange(n) / FS)
@@ -75,7 +79,7 @@ def test_lowpass_gate_mode_amplitude_no_filter():
 
 
 def test_lowpass_gate_mode_lowpass_attenuates_high_freq():
-    """Lowpass-only mode: high frequency should be attenuated at closed gate."""
+    """Lowpass-only mode sweeps the filter cutoff without amplitude VCA; closed gate must heavily attenuate high freq."""
     freq = 5000.0
     n = 8192
     sig = np.sin(2 * np.pi * freq * np.arange(n) / FS)
@@ -105,7 +109,9 @@ def test_lowpass_gate_vactrol_release_is_slower_than_attack():
 
 
 def test_lowpass_gate_output_finite():
+    """Random control voltages must not cause NaN or Inf in any operating mode."""
     sig = _sine(n=4096)
     ctrl = np.random.default_rng(0).uniform(0, 1, len(sig))
     out = lowpass_gate(sig, ctrl, fs=FS)
     assert np.all(np.isfinite(out))
+

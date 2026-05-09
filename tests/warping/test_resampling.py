@@ -11,18 +11,21 @@ def _sine(freq=440.0, n=4096):
 
 
 def test_resample_output_length():
+    """Downsampling 4410 samples from 44100 to 22050 Hz must produce exactly 2205 samples."""
     sig = _sine(n=4410)
     out = resample(sig, orig_fs=44100, target_fs=22050)
     assert len(out) == 2205
 
 
 def test_resample_upsample_length():
+    """Upsampling 2205 samples from 22050 to 44100 Hz must produce exactly 4410 samples."""
     sig = _sine(n=2205)
     out = resample(sig, orig_fs=22050, target_fs=44100)
     assert len(out) == 4410
 
 
 def test_resample_preserves_frequency_content():
+    """After downsampling, the dominant frequency of a 1 kHz sine must still be within 50 Hz of 1 kHz."""
     freq = 1000.0
     sig_44 = np.sin(2 * np.pi * freq * np.arange(4410) / 44100)
     sig_22 = resample(sig_44, 44100, 22050)
@@ -33,6 +36,8 @@ def test_resample_preserves_frequency_content():
 
 
 def test_resample_identity_same_rate():
+    """Resampling to the same rate must return the input unchanged."""
     sig = _sine(n=4096)
     out = resample(sig, 44100, 44100)
     np.testing.assert_allclose(out, sig, atol=1e-10)
+

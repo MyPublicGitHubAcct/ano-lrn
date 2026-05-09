@@ -15,6 +15,7 @@ def _rms(x):
 
 
 def test_lms_output_shape():
+    """lms must return (output, error, weights) with output and error matching the desired length and weights matching filter_order."""
     ref = _sine()
     des = _sine(880.0)
     out, err, w = lms(des, ref, filter_order=16, mu=0.001)
@@ -24,6 +25,7 @@ def test_lms_output_shape():
 
 
 def test_lms_error_decreases_for_identifiable_system():
+    """For a system where desired = delayed(ref), the filter is identifiable and error must decrease over time."""
     n = 4096
     ref = np.random.default_rng(0).standard_normal(n)
     delay = 5
@@ -35,7 +37,9 @@ def test_lms_error_decreases_for_identifiable_system():
 
 
 def test_lms_identity_system_converges():
+    """When desired == ref, the filter has a trivial solution (impulse at tap 0); LMS must converge to near-zero error."""
     n = 4096
     ref = np.random.default_rng(1).standard_normal(n)
     out, err, w = lms(ref, ref, filter_order=16, mu=0.01)
     assert _rms(err[3 * n // 4:]) < 0.1
+

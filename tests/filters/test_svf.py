@@ -24,12 +24,14 @@ def _mag_db_at(h: np.ndarray, freq: float) -> float:
 # --- shape and modes ---
 
 def test_svf_lp_output_shape():
+    """Default (LP) mode must return a 1-D array with the same length as the input."""
     sig = _sine(440.0)
     out = svf(sig, cutoff=CUTOFF, fs=FS)
     assert out.shape == sig.shape
 
 
 def test_svf_all_returns_three_arrays():
+    """mode='all' must return a 3-tuple of (LP, BP, HP) arrays, each matching the input shape."""
     sig = _sine(440.0)
     result = svf(sig, cutoff=CUTOFF, fs=FS, mode="all")
     assert isinstance(result, tuple) and len(result) == 3
@@ -38,6 +40,7 @@ def test_svf_all_returns_three_arrays():
 
 
 def test_svf_invalid_mode_raises():
+    """An unrecognised mode string must raise ValueError rather than silently returning garbage."""
     with pytest.raises(ValueError):
         svf(_sine(440.0), cutoff=CUTOFF, fs=FS, mode="invalid")
 
@@ -45,12 +48,14 @@ def test_svf_invalid_mode_raises():
 # --- LP behaviour ---
 
 def test_svf_lp_passes_low_freq():
+    """A decade below cutoff, the LP output must pass with < 10% attenuation."""
     sig = _sine(100.0)
     out = svf(sig, cutoff=CUTOFF, fs=FS, resonance=0.0, mode="lp")
     assert _steady_rms(out) / _steady_rms(sig) > 0.9
 
 
 def test_svf_lp_attenuates_high_freq():
+    """A decade above cutoff, the 2-pole LP must attenuate by > 26 dB (< 5% amplitude)."""
     sig = _sine(10000.0)
     out = svf(sig, cutoff=CUTOFF, fs=FS, resonance=0.0, mode="lp")
     assert _steady_rms(out) / _steady_rms(sig) < 0.05
@@ -79,6 +84,7 @@ def test_svf_bp_peaks_at_cutoff():
 
 
 def test_svf_bp_attenuates_far_below_cutoff():
+    """BP output at a frequency a decade below center must be lower than at center frequency."""
     sig_low = _sine(100.0)
     sig_cut = _sine(CUTOFF)
     out_low = svf(sig_low, cutoff=CUTOFF, fs=FS, resonance=0.5, mode="bp")
@@ -87,6 +93,7 @@ def test_svf_bp_attenuates_far_below_cutoff():
 
 
 def test_svf_bp_attenuates_far_above_cutoff():
+    """BP output at a frequency a decade above center must be lower than at center frequency."""
     sig_high = _sine(10000.0)
     sig_cut = _sine(CUTOFF)
     out_high = svf(sig_high, cutoff=CUTOFF, fs=FS, resonance=0.5, mode="bp")
@@ -97,12 +104,14 @@ def test_svf_bp_attenuates_far_above_cutoff():
 # --- HP behaviour ---
 
 def test_svf_hp_passes_high_freq():
+    """A decade above cutoff, the HP output must pass with < 10% attenuation."""
     sig = _sine(10000.0)
     out = svf(sig, cutoff=CUTOFF, fs=FS, resonance=0.0, mode="hp")
     assert _steady_rms(out) / _steady_rms(sig) > 0.9
 
 
 def test_svf_hp_rejects_low_freq():
+    """A decade below cutoff, the 2-pole HP must attenuate by > 26 dB (< 5% amplitude)."""
     sig = _sine(100.0)
     out = svf(sig, cutoff=CUTOFF, fs=FS, resonance=0.0, mode="hp")
     assert _steady_rms(out) / _steady_rms(sig) < 0.05
@@ -111,6 +120,7 @@ def test_svf_hp_rejects_low_freq():
 # --- notch behaviour ---
 
 def test_svf_notch_rejects_at_cutoff():
+    """Notch output at the center frequency must be lower than at a frequency a decade away."""
     sig_cut = _sine(CUTOFF)
     sig_low = _sine(100.0)
     out_cut = svf(sig_cut, cutoff=CUTOFF, fs=FS, resonance=0.7, mode="notch")
@@ -121,6 +131,7 @@ def test_svf_notch_rejects_at_cutoff():
 # --- resonance behaviour ---
 
 def test_svf_resonance_boosts_at_cutoff():
+    """Higher resonance must produce a larger peak at the cutoff frequency in LP mode."""
     sig = _sine(CUTOFF)
     out_low_res = svf(sig, cutoff=CUTOFF, fs=FS, resonance=0.0, mode="lp")
     out_high_res = svf(sig, cutoff=CUTOFF, fs=FS, resonance=0.8, mode="lp")
@@ -130,6 +141,7 @@ def test_svf_resonance_boosts_at_cutoff():
 # --- all outputs consistent ---
 
 def test_svf_all_modes_have_same_shape():
+    """All three outputs from mode='all' must match each other and the input in shape."""
     sig = _sine(440.0)
     lp, bp, hp = svf(sig, cutoff=CUTOFF, fs=FS, mode="all")
     assert lp.shape == bp.shape == hp.shape == sig.shape
@@ -138,11 +150,13 @@ def test_svf_all_modes_have_same_shape():
 # --- parameter range tests ---
 
 def test_svf_resonance_near_one_is_finite():
+    """Resonance near 1.0 approaches self-oscillation; the output must stay finite."""
     out = svf(_sine(440.0), cutoff=CUTOFF, fs=FS, resonance=0.99, mode="lp")
     assert np.all(np.isfinite(out))
 
 
 def test_svf_cutoff_at_20hz_is_stable():
+    """Cutoff at the lowest audible frequency (20 Hz) must not cause numerical instability."""
     out = svf(_sine(440.0), cutoff=20.0, fs=FS, resonance=0.0, mode="lp")
     assert np.all(np.isfinite(out))
 
@@ -154,6 +168,8 @@ def test_svf_cutoff_at_fs_over_5_is_stable():
 
 
 def test_svf_cutoff_at_20hz_blocks_signal():
+    """With cutoff far below the signal, LP output must be strongly attenuated."""
     sig = _sine(440.0)
     out = svf(sig, cutoff=20.0, fs=FS, resonance=0.0, mode="lp")
     assert _steady_rms(out) / _steady_rms(sig) < 0.1
+

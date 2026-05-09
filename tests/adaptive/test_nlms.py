@@ -10,6 +10,7 @@ def _rms(x):
 
 
 def test_nlms_output_shape():
+    """nlms must return (output, error, weights) with output and error matching the desired length and weights matching filter_order."""
     t = np.arange(2048) / FS
     ref = np.sin(2 * np.pi * 440.0 * t)
     des = np.sin(2 * np.pi * 880.0 * t)
@@ -20,6 +21,7 @@ def test_nlms_output_shape():
 
 
 def test_nlms_converges_faster_than_lms():
+    """NLMS normalises the step size by signal power, so it should converge faster than plain LMS on an identifiable system."""
     n = 2048
     ref = np.random.default_rng(2).standard_normal(n)
     delay = 3
@@ -30,8 +32,10 @@ def test_nlms_converges_faster_than_lms():
 
 
 def test_nlms_weights_not_all_zero():
+    """After running on non-trivial data, at least one weight must be non-zero (basic sanity check that adaptation occurs)."""
     n = 2048
     ref = np.random.default_rng(3).standard_normal(n)
     des = np.random.default_rng(4).standard_normal(n)
     _, _, w = nlms(des, ref, filter_order=8, mu=0.5)
     assert not np.all(w == 0.0)
+

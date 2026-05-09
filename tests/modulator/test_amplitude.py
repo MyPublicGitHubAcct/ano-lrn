@@ -12,21 +12,25 @@ def _sine(freq=440.0, n=4096):
 
 
 def test_tremolo_shape():
+    """tremolo must return an array of the same length as the input."""
     sig = _sine()
     assert tremolo(sig, rate=5.0, depth=0.5, fs=FS).shape == sig.shape
 
 
 def test_ring_modulate_shape():
+    """ring_modulate must return an array of the same length as the input."""
     sig = _sine()
     assert ring_modulate(sig, carrier_freq=200.0, fs=FS).shape == sig.shape
 
 
 def test_tremolo_zero_depth_is_identity():
+    """depth=0 means the LFO contributes nothing; the output must equal the unmodulated input."""
     sig = _sine()
     np.testing.assert_allclose(tremolo(sig, rate=5.0, depth=0.0, fs=FS), sig, atol=1e-12)
 
 
 def test_tremolo_full_depth_amplitude_range():
+    """depth=1.0 causes the envelope to swing fully between 0 and 1; these extremes must be reached."""
     n = FS
     sig = np.ones(n)
     out = tremolo(sig, rate=2.0, depth=1.0, fs=FS)
@@ -35,12 +39,14 @@ def test_tremolo_full_depth_amplitude_range():
 
 
 def test_tremolo_does_not_change_sign():
+    """Tremolo multiplies by a positive envelope; a positive-constant input must remain non-negative."""
     sig = np.ones(FS)
     out = tremolo(sig, rate=3.0, depth=0.9, fs=FS)
     assert np.all(out >= 0.0)
 
 
 def test_ring_modulate_produces_sidebands():
+    """Ring modulation of a 1 kHz signal by a 200 Hz carrier must produce sidebands at 800 Hz and 1200 Hz."""
     n = FS
     sig = np.sin(2 * np.pi * 1000.0 * np.arange(n) / FS)
     out = ring_modulate(sig, carrier_freq=200.0, fs=FS)
@@ -52,6 +58,8 @@ def test_ring_modulate_produces_sidebands():
 
 
 def test_ring_modulate_by_dc_is_identity():
+    """A 0 Hz carrier is a constant 1.0; the ring modulated output must equal the input."""
     sig = _sine()
     out = ring_modulate(sig, carrier_freq=0.0, fs=FS)
     np.testing.assert_allclose(out, sig, atol=1e-12)
+
