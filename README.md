@@ -7,7 +7,7 @@ DSP algorithm development and testing in Python, targeting eventual port to C++ 
 ```text
 src/       # DSP source modules
 tests/     # pytest test files
-examples/  # standalone example scripts
+plots/     # standalone plot scripts
 ```
 
 ## Prerequisites
@@ -37,7 +37,7 @@ examples/  # standalone example scripts
    uv pip install -e .
    ```
 
-   This step is only needed if you want to import modules from `src/` in scripts run outside of pytest — for example, standalone scripts in `examples/` or an interactive REPL. pytest already adds `src/` to its Python path automatically (via `pythonpath = ["src"]` in `pyproject.toml`), so this step is not required to run tests.
+   This step is only needed if you want to import modules from `src/` in scripts run outside of pytest — for example, standalone scripts in `plots/` or an interactive REPL. pytest already adds `src/` to its Python path automatically (via `pythonpath = ["src"]` in `pyproject.toml`), so this step is not required to run tests.
 
 ## Test Signals
 
@@ -191,8 +191,8 @@ Each effect family lives in its own module under `src/python/`. All effect funct
 uv run pytest
 ```
 
-## Running Examples
+## Running Plots
 
 ```sh
-uv run python examples/<script>.py
+uv run python plots/<script>.py
 ```

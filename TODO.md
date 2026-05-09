@@ -298,7 +298,7 @@ Add `spectral_freeze(signal, fs, freeze_at, hop_size, window_size)` to `src/pyth
 - Organized generators and filters by type with section comments, updated docs, and split `plot_generators.py` / `plot_filters.py` into seven per-type example scripts.
 - Completed the Audio EQ Cookbook filter set by adding notch, all-pass, low-shelf, and high-shelf biquad filters with tests, plots, and updated docs.
 - Verified `moog_ladder` 4-pole rolloff slope with an impulse-response FFT test asserting −27 to −16 dB/octave between 2× and 4× cutoff.
-- Added `examples/plot_filters_utility.py` showing `dc_block` frequency response, DC rejection, and audio passthrough.
+- Added `plots/plot_filters_utility.py` showing `dc_block` frequency response, DC rejection, and audio passthrough.
 - Added `lowpass_gate` (Buchla 292c/292e) with vactrol model, three modes, 9 tests, doc, and example.
-- Added `svf` (Chamberlin SVF): LP/BP/HP/notch outputs in one pass, per-sample cutoff control, stability clamp, 18 tests, `docs/filters/svf.md`, `examples/plot_filters_svf.py`.
-- Added `zdf_svf` (Zavalishin TPT ZDF SVF): exact −3 dB at cutoff for fc/fs up to 0.4, stable to Nyquist, KVL identity verified, 23 tests, TPT derivation in `docs/filters/svf.md`, `examples/plot_filters_zdf_svf.py`.
+- Added `svf` (Chamberlin SVF): LP/BP/HP/notch outputs in one pass, per-sample cutoff control, stability clamp, 18 tests, `docs/filters/svf.md`, `plots/plot_filters_svf.py`.
+- Added `zdf_svf` (Zavalishin TPT ZDF SVF): exact −3 dB at cutoff for fc/fs up to 0.4, stable to Nyquist, KVL identity verified, 23 tests, TPT derivation in `docs/filters/svf.md`, `plots/plot_filters_zdf_svf.py`.

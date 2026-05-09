@@ -12,7 +12,7 @@ DSP algorithm development in Python, targeting eventual port to C++ (VCV Rack mo
 uv sync                        # install dependencies and create .venv
 uv run pytest                  # run all tests
 uv run pytest tests/test_foo.py::test_bar  # run a single test
-uv run python examples/<script>.py         # run an example script
+uv run python plots/<script>.py            # run a plot script
 ```
 
 To import `src/` modules in scripts outside of pytest, first install the package in editable mode:
@@ -51,7 +51,7 @@ Each top-level module under `src/python/` is a package with submodules. The `__i
 
 ### Supporting directories
 
-- [examples/](examples/) — standalone `plot_<module>_<submodule>.py` scripts; not part of the package
+- [plots/](plots/) — standalone `plot_<module>_<submodule>.py` scripts; not part of the package
 - [tests/](tests/) — pytest tests mirroring the package structure; use FFT-based frequency analysis to verify spectral correctness
 - [docs/](docs/) — per-module subdirectories with DSP theory, coefficient derivation, and frequency response notes
 

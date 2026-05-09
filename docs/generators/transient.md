@@ -19,7 +19,7 @@ A single non-zero sample (Dirac delta approximation) at time `delay`. All other 
 x[n] = A · δ[n − delay·fs]
 ```
 
-The Fourier transform of a Dirac delta is a constant — **flat spectrum at all frequencies**. This means that running an impulse through any LTI system and taking the FFT of the output gives the system's full frequency response in one shot. This is how `examples/plot_filters_eq.py` derives filter frequency responses.
+The Fourier transform of a Dirac delta is a constant — **flat spectrum at all frequencies**. This means that running an impulse through any LTI system and taking the FFT of the output gives the system's full frequency response in one shot. This is how `plots/plot_filters_eq.py` derives filter frequency responses.
 
 **Use cases:** measuring impulse responses, deriving frequency responses, unit testing filter shapes.
 
