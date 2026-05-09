@@ -14,7 +14,7 @@ Transfer function:
 H(z) = 1 / (1 − feedback · z^(−D))
 ```
 
-The impulse response is a sequence of exponentially decaying echoes at lags D, 2D, 3D, … with amplitudes 1, `feedback`, `feedback²`, … Stability requires `|feedback| < 1`. At `feedback = 0` the system reduces to H(z) = 1 (identity).
+The impulse response is a sequence of exponentially decaying echoes at lags D, 2D, 3D, … with amplitudes 1, `feedback`, `feedback²`, … Stability requires `|feedback| < 1`. At `feedback = 0` the system reduces to H(z) = 1 (identity). Negative `feedback` produces alternating-sign echoes (+1, −|fb|, +|fb|², −|fb|³, …), adding a half-period phase flip to each reflection.
 
 **Frequency response:** resonant peaks at frequencies f = k · fs / D for integer k, with sharpness controlled by `feedback` (closer to 1 → narrower peaks).
 

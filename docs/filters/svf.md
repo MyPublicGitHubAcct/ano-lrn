@@ -233,6 +233,8 @@ hp = x − k · v1 − v2           # HP = input − k·BP − LP
 
 The KVL identity `LP + k·BP + HP = x` holds sample-by-sample (verified in tests).
 
+The analogous Chamberlin identity is `lp[n] + q·bp[n−1] + hp[n] = x[n]` — it uses the *previous* bp sample, not the current one, because `hp[n]` is computed before `bp[n]` is updated. See the Chamberlin topology section above.
+
 ---
 
 ### Output port characteristics

@@ -15,6 +15,8 @@ y[n] = −threshold · tanh(−x[n] / threshold)  if x[n] < 0
 
 The asymmetry generates both even and odd harmonics, giving a character similar to BJT transistor or diode-based guitar overdrive circuits.
 
+**Degenerate case:** `threshold=0` divides by zero in the negative-half formula. NumPy evaluates `0 · tanh(±∞)` as 0, so the output is all zeros (finite) rather than NaN — but the behaviour is implementation-defined. Avoid passing `threshold=0` in production use.
+
 ---
 
 ## `analog_saturate`
