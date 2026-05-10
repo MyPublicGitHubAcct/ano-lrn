@@ -48,6 +48,29 @@ def test_noise_amplitude_zero_is_silent(seeded_gen):
     np.testing.assert_array_equal(w, np.zeros(N))
 
 
+def test_pink_noise_spectral_slope():
+    """Pink noise PSD must have a -1 log-log slope (power ∝ 1/f)."""
+    fs = 44100
+    _, w = generate_pink_noise(fs=fs, duration=10.0, seed=42)
+    spectrum = np.abs(np.fft.rfft(w)) ** 2
+    freqs = np.fft.rfftfreq(len(w), d=1.0 / fs)
+
+    # Octave-band average power, 200 Hz – 12.8 kHz (6 octaves, many bins each)
+    centers = [200, 400, 800, 1600, 3200, 6400, 12800]
+    band_freqs, band_powers = [], []
+    for fc in centers:
+        mask = (freqs >= fc / np.sqrt(2)) & (freqs < fc * np.sqrt(2))
+        if np.any(mask):
+            band_freqs.append(fc)
+            band_powers.append(np.mean(spectrum[mask]))
+
+    log_f = np.log2(np.array(band_freqs, dtype=float))
+    log_p = np.log2(np.array(band_powers, dtype=float))
+    slope, _ = np.polyfit(log_f, log_p, 1)
+
+    assert -1.15 < slope < -0.85, f"spectral slope {slope:.3f} not near -1.0"
+
+
 def test_white_noise_flat_power_spectral_density():
     """White noise power must be approximately equal across octave bands (within 6 dB of each other)."""
     from python.generators import generate_white_noise
