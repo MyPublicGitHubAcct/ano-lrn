@@ -57,3 +57,12 @@ Each top-level module under `src/python/` is a package with submodules. The `__i
 - [docs/](docs/) — per-module subdirectories with DSP theory, coefficient derivation, and frequency response notes
 
 Tests validate shapes, amplitude bounds, and dominant frequency via FFT (`np.fft.rfft`). Follow this pattern when adding tests for new modules.
+
+## Workflow: completing a TODO item
+
+After finishing any item from `TODO.md`:
+
+1. **Remove** the completed item's `### …` heading and body from the active list in `TODO.md`.
+2. **Add** a one-sentence summary bullet to the `## Completed` section at the bottom of `TODO.md`, following the style of the existing entries.
+3. **Update memory files** in `~/.claude/projects/…/memory/` — at minimum `reference_src_other_modules.md` (new API) and any of `reference_test_patterns_detailed.md`, `reference_examples.md`, `reference_docs_structure.md` that changed.
+4. **Update `CLAUDE.md`** if new packages, submodules, or supporting directories were added to the project.

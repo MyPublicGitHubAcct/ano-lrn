@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from python.virtual_analog import analog_saturate, diode_clip
+from python.virtual_analog import analog_saturate, diode_clip, wavefold
 
 FS = 44100
 
@@ -87,4 +87,66 @@ def test_diode_clip_threshold_zero_clips_positive_to_zero():
     assert out[0] == pytest.approx(0.0, abs=1e-9)
     assert out[1] == pytest.approx(0.0, abs=1e-9)
     assert np.all(np.isfinite(out))
+
+
+# ---------------------------------------------------------------------------
+# wavefold
+# ---------------------------------------------------------------------------
+
+
+def test_wavefold_shape():
+    """wavefold must return an array of the same length as the input."""
+    assert wavefold(_sine()).shape == _sine().shape
+
+
+def test_wavefold_bounded():
+    """Output must stay in [-1, +1] for any gain value."""
+    sig = _sine()
+    for gain in [0.0, 0.5, 1.0, 2.0, 4.0, 8.0]:
+        out = wavefold(sig, gain=gain)
+        assert np.all(out >= -1.0 - 1e-12) and np.all(out <= 1.0 + 1e-12), f"gain={gain} out of bounds"
+
+
+def test_wavefold_gain_zero_silence():
+    """gain=0 must produce an all-zero output (silence)."""
+    out = wavefold(_sine(), gain=0.0)
+    np.testing.assert_allclose(out, 0.0, atol=1e-12)
+
+
+def test_wavefold_harmonic_energy_increases_with_gain():
+    """Higher gain must add more harmonic energy above 2× the fundamental."""
+    FS = 44100
+    FREQ = 440.0
+    N = 4096
+    t = np.arange(N) / FS
+    sig = np.sin(2 * np.pi * FREQ * t)
+    freqs = np.fft.rfftfreq(N, d=1.0 / FS)
+    above_2f = freqs > 2 * FREQ
+
+    energies = []
+    for gain in [0.5, 1.0, 2.0, 3.0]:
+        spectrum = np.abs(np.fft.rfft(wavefold(sig, gain=gain)))
+        energies.append(float(np.sum(spectrum[above_2f] ** 2)))
+
+    for i in range(len(energies) - 1):
+        assert energies[i] < energies[i + 1], (
+            f"harmonic energy did not increase from gain index {i} to {i+1}: {energies}"
+        )
+
+
+def test_wavefold_known_values():
+    """Verify the reflection formula at specific sample values."""
+    # x=0.5  → no fold, output 0.5
+    # x=1.5  → fold once: 2-1.5=0.5
+    # x=2.5  → fold once: 2-2.5=-0.5
+    # x=-1.5 → fold once (negative): -2-(-1.5)=-0.5
+    sig = np.array([0.5, 1.5, 2.5, -1.5])
+    out = wavefold(sig, gain=1.0)
+    np.testing.assert_allclose(out, [0.5, 0.5, -0.5, -0.5], atol=1e-12)
+
+
+def test_wavefold_odd_symmetry():
+    """wavefold has odd symmetry: wavefold(-x, g) = -wavefold(x, g)."""
+    sig = np.linspace(-3.0, 3.0, 200)
+    np.testing.assert_allclose(wavefold(-sig, gain=2.0), -wavefold(sig, gain=2.0), atol=1e-12)
 
